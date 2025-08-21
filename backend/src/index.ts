@@ -11,7 +11,7 @@ connectDB()
     console.log("Database connected successfully");
   })
   .catch((error: Error) => {
-    console.error("Database connection failed:", error);
+    console.error("Database connection failed:");
     process.exit(1);
   });
 // Middleware to parse JSON
