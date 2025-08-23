@@ -5,7 +5,7 @@ export function Footer() {
       <div className="container mx-auto grid grid-cols-1 gap-5 px-4 sm:px-5 md:px-6 md:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="font-extrabold text-lg sm:text-xl">Neural Interview</div>
-          <p className="mt-2 text-nowrap text-[color:var(--text-dim)]">
+          <p className="mt-2 md:text-nowrap text-[color:var(--text-dim)]">
             Practice real interviews and get instant feedback.
           </p>
         </div>

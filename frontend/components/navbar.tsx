@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import React from 'react';
 import Sidebar from './sidebar';
+import { Button } from './ui/button';
 
 export function Navbar() {
   return (
@@ -28,20 +29,15 @@ export function Navbar() {
         </div>
 
         {/* CTAs */}
-        <div className="hidden md:flex gap-2 sm:gap-3">
+        <div className="hidden md:flex ">
+          <Button variant='outline' className='px-7 py-3' asChild>
           <Link
             href="/login"
-            className="rounded-lg border border-[color:var(--border)] px-3 py-2 sm:px-4 text-[color:var(--text)]"
+            // className="rounded-lg border border-[color:var(--border)] px-3 py-2 sm:px-4 text-[color:var(--text)]"
           >
             Login
           </Link>
-          <Link
-            href="/get-started"
-            className="rounded-lg px-3 py-2 sm:px-4 font-semibold text-[#0E1116]"
-            style={{ background: 'linear-gradient(135deg, var(--indigo), var(--coral))' }}
-          >
-            Get Started
-          </Link>
+          </Button>
         </div>
       </nav>
     </header>

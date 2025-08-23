@@ -109,18 +109,9 @@ const Sidebar = ({ children }: SidebarProps) => {
                         <SheetClose asChild>
                             <Link
                                 href="/login"
-                                className="flex-1 text-center rounded-lg border border-[color:var(--border)] px-4 py-2.5 text-[color:var(--text)]"
+                                className="flex-1 text-center rounded-lg border border-[color:var(--border)] px-4 py-2.5 bg-amber-700"
                             >
                                 Login
-                            </Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                            <Link
-                                href="/signup"
-                                className="flex-1 text-center rounded-lg px-4 py-2.5 font-semibold text-[#0E1116]"
-                                style={{ background: 'linear-gradient(135deg, var(--indigo), var(--coral))' }}
-                            >
-                                Get Started
                             </Link>
                         </SheetClose>
                     </div>
