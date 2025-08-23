@@ -14,13 +14,9 @@ name String?
 email String? @unique
 image String?
 emailVerified DateTime?
-// Your domain relation
 interviews Interview[]
-
-// NextAuth relations
 accounts Account[]
 sessions Session[] 
-
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 }

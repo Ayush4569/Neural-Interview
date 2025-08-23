@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
+import { Button } from './ui/button';
+import { ArrowLeft, Github } from 'lucide-react';
 
 export default function LoginPage() {
   return (
@@ -16,8 +18,9 @@ export default function LoginPage() {
           <header className="flex items-center justify-between py-6">
             <Link
               href="/"
-              className="text-sm text-[color:var(--text-dim)] hover:text-[color:var(--text)]"
+              className="text-sm flex items-center gap-x-1 text-[color:var(--text-dim)] hover:text-[color:var(--text)]"
             >
+              <ArrowLeft className='h-4 w-4'/>
               Back to home
             </Link>
           </header>
@@ -36,73 +39,50 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* OAuth buttons */}
             <div className="flex flex-col gap-3">
-              <button
-                onClick={() => signIn('google', { callbackUrl: '/' })}
-                className="group relative flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-2.5 font-medium"
-                style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.02)' }}
+              <Button 
+              className='w-full flex items-center gap-x-2 bg-white text-black cursor-pointer hover:bg-amber-600'
+              onClick={() => signIn('google', { callbackUrl: '/' })}
               >
-                <span className="absolute left-3 flex items-center">
-                  <Image
-                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                    width={20}
-                    height={20}
-                    alt="Google"
-                    priority
-                  />
-                </span>
-                Continue with Google
-                <span
-                  className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                  style={{ boxShadow: '0 0 0 1px var(--indigo) inset' }}
-                />
-              </button>
-
-              <button
-                onClick={() => signIn('github', { callbackUrl: '/' })}
-                className="group relative flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-2.5 font-medium"
-                style={{ borderColor: 'var(--border)', background: 'rgba(255,255,255,0.02)' }}
+              <Image
+                src="/google.svg"
+                alt="Google Icon"
+                width={25}
+                height={25}
+                priority
+              />
+                Sign in with google
+              </Button>
+              <Button 
+              className='w-full flex items-center gap-x-2 bg-white text-black cursor-pointer hover:bg-amber-600'
+              onClick={() => signIn('github', { callbackUrl: '/' })}
               >
-                <span className="absolute left-3 flex items-center">
-                  <Image
-                    src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg"
-                    width={20}
-                    height={20}
-                    alt="GitHub"
-                    priority
-                  />
-                </span>
-                Continue with GitHub
-                <span
-                  className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                  style={{ boxShadow: '0 0 0 1px var(--coral) inset' }}
-                />
-              </button>
+              <Image
+                src="/github.svg"
+                alt="Github Icon"
+                width={25}
+                height={25}
+                priority
+              />
+                Sign in with Github
+              </Button>
             </div>
 
-            {/* Divider */}
             <div className="my-6 flex items-center gap-3 text-[color:var(--text-dim)]">
               <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
               <span className="text-xs">or</span>
               <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
             </div>
 
-            {/* Hint / Privacy */}
             <p className="text-xs text-[color:var(--text-dim)]">
               By continuing, you agree to our{' '}
-              <Link href="/terms" className="underline hover:text-[color:var(--text)]">
-                Terms
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="underline hover:text-[color:var(--text)]">
-                Privacy Policy
-              </Link>
-              .
+              <span className="underline cursor-pointer hover:text-[color:var(--text)]">Terms </span>
+              and 
+              {" "}
+              <span className="underline cursor-pointer hover:text-[color:var(--text)]">       Privacy Policy</span>
             </p>
           </section>
 
-          {/* Subtle CTA */}
           <p className="mt-4 text-center text-sm text-[color:var(--text-dim)]">
             Don’t have an account? It’ll be created automatically after sign‑in.
           </p>

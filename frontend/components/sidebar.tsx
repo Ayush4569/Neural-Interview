@@ -13,6 +13,7 @@ import {
 import React, { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 type SidebarProps = { children: ReactNode };
 
@@ -25,7 +26,7 @@ const nav = [
 
 const Sidebar = ({ children }: SidebarProps) => {
     const pathname = usePathname();
-
+    const session = useSession()
     return (
         <Sheet>
             <SheetTrigger asChild>{children}</SheetTrigger>
@@ -114,6 +115,18 @@ const Sidebar = ({ children }: SidebarProps) => {
                                 Login
                             </Link>
                         </SheetClose>
+                        {
+                            session.status === 'authenticated' && (
+                                <SheetClose asChild>
+                                    <Link
+                                        href="/profile"
+                                        className="flex-1 text-center rounded-lg border border-[color:var(--border)] px-4 py-2.5 bg-white text-black"
+                                    >
+                                        Profile
+                                    </Link>
+                                </SheetClose>
+                            )
+                        }
                     </div>
                 </SheetFooter>
             </SheetContent>
