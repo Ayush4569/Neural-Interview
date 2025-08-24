@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { config } from './env.js'
-import { connectDB } from './database/db.js';
-import interviewRoutes from './routes/interview.routes.js';
+import { config } from './env'
+import { connectDB } from './database/db';
+import interviewRoutes from './routes/interview.routes';
+import { verifyNextAuthToken } from './middleware/auth.middleware';
 const app = express();
-
 
 connectDB()
   .then(() => {
@@ -28,8 +28,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Basic route
 app.get('/', (req: Request, res: Response) => {
-  return res.send('Neural Interview API is running!');
+   res.send('Neural Interview API is running!');
+   return;
 });
+
 app.use('/api/interviews',interviewRoutes)
 // Start the server
 app.listen(config.PORT, () => {
