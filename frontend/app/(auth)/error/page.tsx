@@ -1,7 +1,7 @@
 import React from 'react'
-import AuthError from '@/components/authError'
+import AuthError from '@/app/(auth)/_components/authError'
 const AuthErrorPage = () => {
-  return <AuthError/>
+  return <AuthError />
 }
 
 export default AuthErrorPage

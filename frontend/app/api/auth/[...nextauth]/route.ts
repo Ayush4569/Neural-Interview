@@ -26,7 +26,7 @@ export const authOptions:NextAuthOptions = {
     jwt:async({token,user,account,profile})=>{
       if (user) {
         token.id = user.id       
-        token.email = user.email;
+        token.email = user.email
       }
       return token;
     },

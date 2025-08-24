@@ -1,11 +1,13 @@
 
 import React from 'react';
-import { Calendar, User ,Star } from 'lucide-react';
+import { Calendar, User ,Star,PlusCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InterviewCard from '../_components/InterviewCard';
 import EmptyState from '../_components/EmptyState';
+import { CreateInterviewModal } from '../_components/CreateInterviewModal';
+import { Button } from '@/components/ui/button';
 
 // Mock data - replace with real data from your API
 const mockInterviews = {
@@ -73,7 +75,16 @@ export default function MyInterviews() {
         {/* Header */}
         <div className="mb-8">
           <Badge className="mb-2 bg-[color:var(--mint)] text-[#0E1116]">My Dashboard</Badge>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3">My Interviews</h1>
+          <div className='flex flex-col gap-y-1.5 md:gap-y-0 md:flex-row md:items-center md:justify-between mb-2 '>
+          <h1 className="text-3xl sm:text-4xl font-bold ">My Interviews</h1>
+          <CreateInterviewModal>
+                    <Button className='bg-white text-black hover:bg-gray-300 transition-colors ease-in cursor-pointer w-max'>
+                      <PlusCircle  />
+                      Create Interview
+                    </Button>
+                </CreateInterviewModal>
+          </div>
+          
           <p className="text-[color:var(--text-dim)] max-w-2xl">
             Track your interview progress, review past performances, and manage upcoming sessions all in one place.
           </p>
@@ -120,7 +131,7 @@ export default function MyInterviews() {
 
         {/* Tabs for switching between upcoming and past */}
         <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="grid w-fit grid-cols-2 mb-8 bg-[color:var(--surface)] border border-[color:var(--border)]">
+          <TabsList className="grid w-fit gap-x-2 grid-cols-2 mb-8 bg-[color:var(--surface)] border border-[color:var(--border)]">
             <TabsTrigger value="upcoming" className="data-[state=active]:bg-indigo-500/10 data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-indigo-500/20 cursor-pointer">
               Upcoming ({upcomingInterviews.length})
             </TabsTrigger>

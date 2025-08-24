@@ -3,10 +3,12 @@ import { MenuIcon } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 import Sidebar from './sidebar';
+import Image from 'next/image';
 import { Button } from './ui/button';
 import { useSession } from 'next-auth/react';
 import { Skeleton } from './ui/skeleton';
 import { usePathname } from 'next/navigation';
+import { AvatarDropDown } from '@/app/(auth)/_components/AvatarDropdown';
 export function Navbar() {
   const { status, data } = useSession();
   const pathname = usePathname();
@@ -40,7 +42,7 @@ export function Navbar() {
         <div className="hidden md:flex ">
           {status === "loading" && (
             <div className="flex gap-2 animate-out">
-              <Skeleton className="h-9 w-28 bg-neutral-200 dark:bg-neutral-700" />
+              <Skeleton className="h-[50px] w-[50px] rounded-full bg-neutral-200 dark:bg-neutral-700" />
             </div>
           )}
           {status !== "loading" && status === "unauthenticated" && (
@@ -49,9 +51,16 @@ export function Navbar() {
             </Button>
           )}
           {status === "authenticated" && data.user.id && (
-            <Button asChild className="text-black bg-white cursor-pointer">
-              <Link href="/profile">Profile</Link>
-            </Button>
+            <AvatarDropDown>
+              <Image
+                src={data.user.image || '/user-avatar.png'}
+                alt={data.user.name || 'User Avatar'}
+                height={50}
+                width={50}
+                priority
+                className="rounded-full"
+              />
+            </AvatarDropDown>
           )}
         </div>
       </nav>

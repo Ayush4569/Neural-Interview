@@ -5,16 +5,16 @@ import topColor from "@/components/topColor";
 import { cards } from "@/constants";
 import Link from "next/link";
 import { useSession } from 'next-auth/react';
+import { CreateInterviewModal } from '@/app/(Interview)/_components/CreateInterviewModal';
 const Home = () => {
     const { status } = useSession();
     return (
         <div className="min-h-screen">
-
             <section className="container relative mx-auto px-4 sm:px-5 md:px-6 py-10 sm:py-12 md:py-14 lg:py-16">
                 <div
-                    className="pointer-events-none absolute inset-0 -z-10 bg-center bg-no-repeat bg-cover opacity-30"
+                    className="pointer-events-none absolute inset-0 -z-10 bg-center bg-no-repeat bg-cover opacity-20"
                     style={{
-                      backgroundImage: "url('/robot.png')",
+                        backgroundImage: "url('/robot.png')",
                     }}
                 />
                 <span className="inline-block rounded-full bg-[color:var(--mint)] px-3 py-1.5 text-[10px] sm:text-xs font-medium text-[#0E1116]">
@@ -30,17 +30,15 @@ const Home = () => {
                     correctness, and impact.
                 </p>
 
-                <div className="mt-4 flex flex-wrap gap-2 sm:gap-3">
+                <CreateInterviewModal>
                     <button
 
-                        className="rounded-lg px-4 py-2.5 sm:px-5 sm:py-3 font-semibold text-[#0E1116] cursor-pointer"
+                        className="rounded-lg mt-4 px-4 py-2.5 sm:px-5 sm:py-3 font-semibold text-shadow-300 cursor-pointer hover:scale-110 transition-transform duration-300 ease-in-out"
                         style={{ background: "linear-gradient(135deg, var(--indigo), var(--coral))" }}
                     >
-                        <Link href='/interviews'>
-                            Start an Interview
-                        </Link>
+                        Create an Interview
                     </button>
-                </div>
+                </CreateInterviewModal>
             </section>
 
 

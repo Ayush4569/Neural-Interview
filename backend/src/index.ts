@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { config } from './env.js'
 import { connectDB } from './database/db.js';
+import interviewRoutes from './routes/interview.routes.js';
 const app = express();
 
 
@@ -29,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req: Request, res: Response) => {
   return res.send('Neural Interview API is running!');
 });
-
+app.use('/api/interviews',interviewRoutes)
 // Start the server
 app.listen(config.PORT, () => {
   console.log(`Server is running on http://localhost:${config.PORT}`);

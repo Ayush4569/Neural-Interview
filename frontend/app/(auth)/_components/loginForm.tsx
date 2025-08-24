@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { Button } from './ui/button';
+import { Button } from '../../../components/ui/button';
 import { ArrowLeft, Github } from 'lucide-react';
 
 export default function LoginPage() {
@@ -20,7 +20,7 @@ export default function LoginPage() {
               href="/"
               className="text-sm flex items-center gap-x-1 text-[color:var(--text-dim)] hover:text-[color:var(--text)]"
             >
-              <ArrowLeft className='h-4 w-4'/>
+              <ArrowLeft className='h-4 w-4' />
               Back to home
             </Link>
           </header>
@@ -40,30 +40,30 @@ export default function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button 
-              className='w-full flex items-center gap-x-2 bg-white text-black cursor-pointer hover:bg-amber-600'
-              onClick={() => signIn('google', { callbackUrl: '/' })}
+              <Button
+                className='w-full flex items-center gap-x-2 bg-white text-black cursor-pointer hover:bg-amber-600'
+                onClick={() => signIn('google', { callbackUrl: '/' })}
               >
-              <Image
-                src="/google.svg"
-                alt="Google Icon"
-                width={25}
-                height={25}
-                priority
-              />
+                <Image
+                  src="/google.svg"
+                  alt="Google Icon"
+                  width={25}
+                  height={25}
+                  priority
+                />
                 Sign in with google
               </Button>
-              <Button 
-              className='w-full flex items-center gap-x-2 bg-white text-black cursor-pointer hover:bg-amber-600'
-              onClick={() => signIn('github', { callbackUrl: '/' })}
+              <Button
+                className='w-full flex items-center gap-x-2 bg-white text-black cursor-pointer hover:bg-amber-600'
+                onClick={() => signIn('github', { callbackUrl: '/' })}
               >
-              <Image
-                src="/github.svg"
-                alt="Github Icon"
-                width={25}
-                height={25}
-                priority
-              />
+                <Image
+                  src="/github.svg"
+                  alt="Github Icon"
+                  width={25}
+                  height={25}
+                  priority
+                />
                 Sign in with Github
               </Button>
             </div>
@@ -77,7 +77,7 @@ export default function LoginPage() {
             <p className="text-xs text-[color:var(--text-dim)]">
               By continuing, you agree to our{' '}
               <span className="underline cursor-pointer hover:text-[color:var(--text)]">Terms </span>
-              and 
+              and
               {" "}
               <span className="underline cursor-pointer hover:text-[color:var(--text)]">       Privacy Policy</span>
             </p>
