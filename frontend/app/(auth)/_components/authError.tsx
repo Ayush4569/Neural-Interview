@@ -2,44 +2,10 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-const errorMap: Record<string, { title: string; message: string }> = {
-    OAuthSignin: {
-        title: 'Sign-in failed',
-        message: 'We could not start the sign‑in with your provider. Please try again.',
-    },
-    OAuthCallback: {
-        title: 'Provider callback failed',
-        message:
-            'We were unable to complete the sign‑in. This can happen if the request expired or was tampered with.',
-    },
-    OAuthCreateAccount: {
-        title: 'Account creation failed',
-        message:
-            'We could not create your account from the provider profile. Please try again or use another provider.',
-    },
-    EmailCreateAccount: {
-        title: 'Email sign-in unavailable',
-        message: 'Email-based account creation is currently not available.',
-    },
-    CallbackRouteError: {
-        title: 'Callback error',
-        message: 'Something went wrong while handling your sign‑in callback.',
-    },
-    AccessDenied: {
-        title: 'Access denied',
-        message:
-            'This account is not allowed to sign in. If you believe this is a mistake, contact support.',
-    },
-    default: {
-        title: 'Authentication error',
-        message: 'Something went wrong during sign‑in. Please try again.',
-    },
-};
-
 export default function AuthErrorPage() {
     const params = useSearchParams();
     const code = params.get('error') || 'default';
-    const { title, message } = errorMap[code] || errorMap.default;
+    console.log('Auth error code:', code);
 
     return (
         <main
@@ -81,8 +47,12 @@ export default function AuthErrorPage() {
                         )}
                     </div>
 
-                    <h1 className="mt-3 text-2xl sm:text-3xl font-bold leading-tight">{title}</h1>
-                    <p className="mt-2 text-sm sm:text-base text-[color:var(--text-dim)]">{message}</p>
+                    <h1 className="mt-3 text-2xl sm:text-3xl font-bold leading-tight">
+                    Sign-in failed
+                    </h1>
+                    <p className="mt-2 text-sm sm:text-base text-[color:var(--text-dim)]">
+                    We could not start the sign‑in with your provider. Please try again
+                    </p>
 
                     {/* Helpful hints */}
                     <ul className="mt-5 space-y-2 text-sm text-[color:var(--text-dim)]">

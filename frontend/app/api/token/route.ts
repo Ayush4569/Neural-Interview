@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
     raw: true,
     secret: process.env.NEXTAUTH_SECRET 
   });
+  console.log(`API Route Token:`,token);
   
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

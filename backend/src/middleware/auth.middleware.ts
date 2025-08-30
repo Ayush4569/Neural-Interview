@@ -6,19 +6,19 @@ export async function verifyNextAuthToken(req: Request, res: Response, next: Nex
         const authHeader = req.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-             res.status(401).json({ error: 'Missing or invalid authorization header',success: false });
+            res.status(401).json({ error: 'Missing or invalid authorization header', success: false });
             return;
         }
 
         const token = authHeader.split(' ')[1];
 
         const decoded = await decode({
-            token: token,
+            token,
             secret: process.env.JWT_SECRET as string,
         });
 
         if (!decoded) {
-            res.status(401).json({ error: 'Invalid or expired token',success: false });
+            res.status(401).json({ error: 'Invalid or expired token', success: false });
             return;
         }
 
@@ -32,7 +32,7 @@ export async function verifyNextAuthToken(req: Request, res: Response, next: Nex
         next();
     } catch (error) {
         console.error('JWT verification error:', error);
-        res.status(401).json({ error: 'Token verification failed',success: false });
+        res.status(401).json({ error: 'Token verification failed', success: false });
         return;
     }
 }

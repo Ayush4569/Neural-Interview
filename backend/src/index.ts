@@ -4,7 +4,6 @@ import cookieParser from 'cookie-parser';
 import { config } from './env'
 import { connectDB } from './database/db';
 import interviewRoutes from './routes/interview.routes';
-import { verifyNextAuthToken } from './middleware/auth.middleware';
 const app = express();
 
 connectDB()

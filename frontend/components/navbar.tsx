@@ -46,8 +46,8 @@ export function Navbar() {
             </div>
           )}
           {status !== "loading" && status === "unauthenticated" && (
-            <Button asChild className="cursor-pointer">
-              <Link href="/login">Login</Link>
+            <Button asChild className="cursor-pointer hover:scale-120">
+              <Link href="/login" className='hover:underline '>Login</Link>
             </Button>
           )}
           {status === "authenticated" && data.user.id && (
