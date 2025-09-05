@@ -3,23 +3,23 @@ export interface TimeState {
     minute: string;
 }
 interface InterviewSummary {
-    overallSummary:string
-    strengths:string[]        
-    improvements : string[]        
-    technicalScore:number          
-    communicationScore:number   
+    overallSummary: string
+    strengths: string[]
+    improvements: string[]
+    technicalScore: number
+    communicationScore: number
 }
 export interface Interview {
     id: string;
     startTime: Date;
     endTime: Date;
-    techStack: string; 
-    durationMinutes: number; 
-    expLevel: 'fresher'|'mid'|'lead'|'senior'; 
+    techStack: string;
+    durationMinutes: number;
+    expLevel: 'fresher' | 'mid' | 'lead' | 'senior';
     status: 'scheduled' | 'completed' | 'active' | 'expired';
-    jobTitle: string; 
+    jobTitle: string;
     createdAt: Date;
-    additionalPrompt?: string; 
+    additionalPrompt?: string;
     summary: InterviewSummary
     userId: string;
 }

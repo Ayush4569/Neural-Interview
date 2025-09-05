@@ -5,12 +5,11 @@ import React from 'react';
 import Sidebar from './sidebar';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { useSession } from 'next-auth/react';
 import { Skeleton } from './ui/skeleton';
 import { usePathname } from 'next/navigation';
-import { AvatarDropDown } from '@/app/(auth)/_components/AvatarDropdown';
+import { AvatarDropDown } from '@/app/(auth)/_components/avatar-dropdown';
 export function Navbar() {
-  const { status, data } = useSession();
+
   const pathname = usePathname();
   return (
     <header className="container mx-auto px-4 sm:px-5 md:px-6">
@@ -38,31 +37,6 @@ export function Navbar() {
 
         </div>
 
-        {/* CTAs */}
-        <div className="hidden md:flex ">
-          {status === "loading" && (
-            <div className="flex gap-2 animate-out">
-              <Skeleton className="h-[50px] w-[50px] rounded-full bg-neutral-200 dark:bg-neutral-700" />
-            </div>
-          )}
-          {status !== "loading" && status === "unauthenticated" && (
-            <Button asChild className="cursor-pointer hover:scale-120">
-              <Link href="/login" className='hover:underline '>Login</Link>
-            </Button>
-          )}
-          {status === "authenticated" && data.user.id && (
-            <AvatarDropDown>
-              <Image
-                src={data.user.image || '/user-avatar.png'}
-                alt={data.user.name || 'User Avatar'}
-                height={50}
-                width={50}
-                priority
-                className="rounded-full"
-              />
-            </AvatarDropDown>
-          )}
-        </div>
       </nav>
     </header>
   );

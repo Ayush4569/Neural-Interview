@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './env'
 import { connectDB } from './database/db';
 import interviewRoutes from './routes/interview.routes';
+import userRoutes from './routes/user.routes';
 const app = express();
 
 connectDB()
@@ -11,12 +12,13 @@ connectDB()
     console.log("Database connected successfully");
   })
   .catch((error: Error) => {
-    console.error("Database connection failed:");
+    console.error(error.message || "Database connection failed");
     process.exit(1);
   });
+
 // Middleware to parse JSON
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -27,11 +29,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Basic route
 app.get('/', (req: Request, res: Response) => {
-   res.send('Neural Interview API is running!');
-   return;
+  res.send('Neural Interview API is running!');
 });
+app.use("/api/users", userRoutes)
+app.use('/api/interviews', interviewRoutes)
 
-app.use('/api/interviews',interviewRoutes)
 // Start the server
 app.listen(config.PORT, () => {
   console.log(`Server is running on http://localhost:${config.PORT}`);

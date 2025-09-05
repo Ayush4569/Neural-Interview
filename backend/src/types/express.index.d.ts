@@ -4,9 +4,9 @@ declare global {
         interface Request {
             user?: {
                 id: string
-                name: string;
+                username: string;
                 email: string;
-                image: string
+                avatarUrl: string
             }
         }
     }

@@ -3,11 +3,8 @@ import React from 'react'
 import Bar from "@/components/bar";
 import topColor from "@/components/topColor";
 import { cards } from "@/constants";
-import Link from "next/link";
-import { useSession } from 'next-auth/react';
-import { CreateInterviewModal } from '@/app/(Interview)/_components/CreateInterviewModal';
+import { CreateInterviewModal } from '@/app/(Interview)/_components/interview-form';
 const Home = () => {
-    const { status } = useSession();
     return (
         <div className="min-h-screen">
             <section className="container relative mx-auto px-4 sm:px-5 md:px-6 py-10 sm:py-12 md:py-14 lg:py-16">
@@ -117,30 +114,7 @@ const Home = () => {
                 </div>
             </section>
 
-
-            {
-                status !== 'authenticated' && (
-                    <section className="container mx-auto px-4 sm:px-5 md:px-6 py-10 sm:py-12 md:py-14 lg:py-16">
-                        <h2 className="text-xl sm:text-2xl font-semibold">Ready to Practice Smarter?</h2>
-                        <p className="mt-2 max-w-[700px] text-[color:var(--text-dim)] text-sm sm:text-base">
-                            Create a free account and run the first interview in minutes. No credit card required.
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2 sm:gap-3">
-                            <button
-                                className="rounded-lg px-4 py-2.5 sm:px-5 sm:py-3 font-semibold text-[#0E1116]"
-                                style={{ background: "linear-gradient(135deg, var(--indigo), var(--coral))" }}
-                            >
-                                <Link href='/login'>
-                                    Create Account
-                                </Link>
-                            </button>
-                        </div>
-                    </section>
-                )
-            }
-
         </div>
-
     )
 }
 

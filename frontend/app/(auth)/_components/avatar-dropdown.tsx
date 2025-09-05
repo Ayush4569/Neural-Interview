@@ -7,7 +7,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { signOut } from "next-auth/react"
 import { User, LogOut } from "lucide-react"
 import Link from "next/link"
 
@@ -44,7 +43,7 @@ export function AvatarDropDown({ children }: { children: React.ReactNode }) {
                     <Button 
                         className="w-full justify-start gap-2 bg-red-600/10 text-red-300 hover:bg-red-600/20 hover:text-red-300 border border-red-700/20 hover:border-red-700/40 transition-all duration-200 group"
                         variant="ghost"
-                        onClick={() => signOut({ callbackUrl: '/' })}
+                        
                     >
                         <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                         Logout
