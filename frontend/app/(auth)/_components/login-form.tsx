@@ -1,11 +1,155 @@
 'use client';
 
-import Image from 'next/image';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { Button } from '../../../components/ui/button';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+
+import {
+  Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
+} from '@/components/ui/form';
+import { loginSchema } from '@/schemas';
+
+
+type FormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
+  const [showPw, setShowPw] = useState(false);
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange',
+    defaultValues: { email: '', password: '' },
+  });
+
+  const isSubmitting = form.formState.isSubmitting;
+
+  async function onSubmit(values: FormData) {
+    try {
+      // TODO: replace with real endpoint or server action
+      await new Promise(r => setTimeout(r, 1000));
+      // Example success path:
+      console.log('Signup payload:', values);
+      // router.push('/verify') etc.
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
-    <main></main>
+    <main
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: 'var(--bg)', color: 'var(--text)' }}
+    >
+
+      <Card
+        className="w-full max-w-[460px] md:border-[color:var(--border)] md:shadow-xl border-none "
+      >
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl">Login to you account</CardTitle>
+          <CardDescription className="text-[color:var(--text-dim)] text-base">
+            Hey welcome back 👋🏻, login to continue.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5">
+
+              {/* Email */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[color:var(--text)]">Email</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--text-dim)]" />
+                        <Input
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          placeholder="name@company.com"
+                          className="pl-9 border-[color:var(--border)] bg-[color:var(--bg)] text-[color:var(--text)] placeholder:text-[color:var(--text-dim)]"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[color:var(--text)]">Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--text-dim)]" />
+                        <Input
+                          type={showPw ? 'text' : 'password'}
+                          autoComplete="new-password"
+                          placeholder="••••••••"
+                          className="pl-9 pr-10 border-[color:var(--border)] bg-[color:var(--bg)] text-[color:var(--text)] placeholder:text-[color:var(--text-dim)]"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          aria-label={showPw ? 'Hide password' : 'Show password'}
+                          onClick={() => setShowPw(v => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)] hover:text-[color:var(--text)] transition-colors"
+                        >
+                          {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormDescription className="text-[color:var(--text-dim)]">
+                      Password must be at least 6 characters
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                disabled={isSubmitting || !form.formState.isValid}
+                className="rounded-lg px-5 py-3 font-semibold text-[#0E1116] bg-gradient-to-tr from-indigo-500 to-rose-500 hover:from-indigo-400 hover:to-rose-400 transition-colors duration-200"
+              >
+                {isSubmitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#0E1116]/20 border-t-[#0E1116]" />
+                    Submitting...
+                  </span>
+                ) : (
+                  'Login'
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+
+        <CardFooter className="flex flex-col gap-3">
+          <p className="text-sm text-[color:var(--text-dim)]">
+            Don't have an account?{' '}
+            <Link href="/signup" className="underline hover:text-[color:var(--text)]">
+              Register
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
+    </main>
   );
 }
