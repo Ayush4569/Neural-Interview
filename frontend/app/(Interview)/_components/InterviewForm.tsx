@@ -35,7 +35,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Clock, Sparkles, Briefcase, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { TimeSelector } from "./time-selector";
+import { TimeSelector } from "./TimeSelector";
 import { TimeState } from '@/types/globalTypes';
 import { DURATION_OPTIONS, EXPERIENCE_LEVELS } from "@/constants/index";
 import { toast } from 'sonner';

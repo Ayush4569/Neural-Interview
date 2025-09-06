@@ -1,8 +1,8 @@
-import { prisma } from "database/db";
+import { prisma } from "../database/db";
 import { Response, Request } from "express";
-import { accessTokenOptions, refreshTokenOptions } from "utils/cookies";
-import { generateAccessToken, generateRefreshToken } from "utils/generateTokens";
-import { hashPassword } from "utils/helpers";
+import { accessTokenOptions, refreshTokenOptions } from "../utils/cookies";
+import { generateAccessToken, generateRefreshToken } from "../utils/generateTokens";
+import { hashPassword } from "../utils/helpers";
 import bcrypt from "bcrypt"
 export const registerUser = async (req: Request, res: Response) => {
     const { username, email, password } = req.body

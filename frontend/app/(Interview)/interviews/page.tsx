@@ -4,9 +4,9 @@ import { Calendar, User, Star, PlusCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import InterviewCard from '../_components/interview-card';
-import EmptyState from '../_components/empty-state';
-import { CreateInterviewModal } from '../_components/interview-form';
+import InterviewCard from '../_components/InterviewCard';
+import EmptyState from '../_components/EmptyState';
+import { CreateInterviewModal } from '../_components/InterviewForm';
 import { Button } from '@/components/ui/button';
 
 

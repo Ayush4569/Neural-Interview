@@ -31,8 +31,8 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req: Request, res: Response) => {
   res.send('Neural Interview API is running!');
 });
-app.use("/api/users", userRoutes)
-app.use('/api/interviews', interviewRoutes)
+app.use("/api/user", userRoutes)
+app.use('/api/interview', interviewRoutes)
 
 // Start the server
 app.listen(config.PORT, () => {

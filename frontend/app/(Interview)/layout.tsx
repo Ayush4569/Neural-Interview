@@ -1,17 +1,17 @@
-import Footer from '@/components/footer'
-import Navbar from '@/components/navbar'
-import React,{ReactNode} from 'react'
+import Footer from '@/components/Footer'
+import Navbar from '@/components/Navbar'
+import React, { ReactNode } from 'react'
 
-const InterviewLayout = ({children}:{ 
-    children: ReactNode
+const InterviewLayout = ({ children }: {
+  children: ReactNode
 }) => {
   return (
     <>
-      <Navbar/>
+      <Navbar />
       <main>
-      {children}
+        {children}
       </main>
-      <Footer/>
+      <Footer />
     </>
   )
 }

@@ -1,9 +1,9 @@
 'use client'
 import React from 'react'
-import Bar from "@/components/bar";
-import topColor from "@/components/topColor";
+import Bar from "@/components/Bar";
+import topColor from "@/components/TopColor";
 import { cards } from "@/constants";
-import { CreateInterviewModal } from '@/app/(Interview)/_components/interview-form';
+import { CreateInterviewModal } from '@/app/(Interview)/_components/InterviewForm';
 const Home = () => {
     return (
         <div className="min-h-screen">

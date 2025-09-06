@@ -1,6 +1,6 @@
-import { config } from "env";
+import { config } from "../env";
 import jwt from "jsonwebtoken";
-import { User } from "types/user";
+import { User } from "../types/user";
 
 export function generateAccessToken(user: Pick<User, 'id' | 'email' | 'username' | 'avatarUrl'>) {
     const token = jwt.sign({

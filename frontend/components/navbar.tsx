@@ -2,12 +2,12 @@
 import { MenuIcon } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
-import Sidebar from './sidebar';
+import Sidebar from './Sidebar';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { usePathname } from 'next/navigation';
-import { AvatarDropDown } from '@/app/(auth)/_components/avatar-dropdown';
+import { AvatarDropDown } from '@/app/(auth)/_components/AvatarDropdown';
 export function Navbar() {
 
   const pathname = usePathname();

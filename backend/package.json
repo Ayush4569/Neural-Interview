@@ -21,7 +21,6 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "next-auth": "^4.24.11",
     "zod": "^4.0.17"
   },
   "devDependencies": {

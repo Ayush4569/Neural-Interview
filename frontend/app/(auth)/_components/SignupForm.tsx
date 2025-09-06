@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
-
+import { useRouter } from 'next/navigation';
 import {
   Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription,
 } from '@/components/ui/card';
@@ -16,13 +16,17 @@ import {
   Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from '@/components/ui/form';
 import { signupSchema } from '@/schemas';
+import { toast } from 'sonner';
+import axios, { AxiosError } from 'axios';
+import { useAuthContext } from '@/context/AuthContext';
 
 
 type FormData = z.infer<typeof signupSchema>;
 
 export default function Signup() {
+  const router = useRouter();
   const [showPw, setShowPw] = useState(false);
-
+  const {login} = useAuthContext()
   const form = useForm<FormData>({
     resolver: zodResolver(signupSchema),
     mode: 'onChange',
@@ -31,15 +35,36 @@ export default function Signup() {
 
   const isSubmitting = form.formState.isSubmitting;
 
-  async function onSubmit(values: FormData) {
+  async function onSubmit(data: FormData) {
+    const result = signupSchema.safeParse(data);
+    if (!result.success) {
+      toast.error(result.error.format()._errors.toString());
+      return;
+    }
+    const { username, email, password } = data;
     try {
-      // TODO: replace with real endpoint or server action
-      await new Promise(r => setTimeout(r, 1000));
-      // Example success path:
-      console.log('Signup payload:', values);
-      // router.push('/verify') etc.
-    } catch (e) {
-      console.error(e);
+      const response = await axios.post(`http://localhost:8000/api/user/signup`, {
+        username,
+        email,
+        password,
+      });
+      login(response.data.user)
+      toast.success(response.data.message || "user registered");
+      router.replace('/interview')
+    } catch (error) {
+      console.error("Error during sign-up:", error);
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message);
+      } else {
+        toast.error("unexpected error ");
+      }
+    }
+    finally {
+      form.reset({
+        email:"",
+        username: "",
+        password: "",
+      })
     }
   }
 

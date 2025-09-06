@@ -1,4 +1,5 @@
 "use client";
+import { AuthContextProvider } from "@/context/AuthContext";
 import {Toaster} from "sonner"
 export default function Providers({
   children,
@@ -7,9 +8,9 @@ export default function Providers({
 }) {
   
   return (
-     <>
+     <AuthContextProvider>
       <Toaster position="bottom-center"/>
       {children}
-     </>
+     </AuthContextProvider>
   );
 }
