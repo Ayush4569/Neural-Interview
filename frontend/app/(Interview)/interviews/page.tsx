@@ -1,4 +1,4 @@
-
+'use client'
 import React from 'react';
 import { Calendar, User, Star, PlusCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 
 
 
-export default async function MyInterviews() {
+export default function MyInterviews() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>

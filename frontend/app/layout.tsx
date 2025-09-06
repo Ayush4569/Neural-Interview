@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Mona_Sans} from "next/font/google";
 import "./globals.css";
 import Providers from "./provider";
+import { getTokenStatus } from "./actions/token";
 
 const monaSans = Mona_Sans({
   variable: "--font-mona-sans",
@@ -14,11 +15,12 @@ export const metadata: Metadata = {
   description: "An AI powered interview platform that helps you prepare for interviews.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const tokenStatus = await getTokenStatus()
   return (
     <html lang="en">
       <body
@@ -26,7 +28,7 @@ export default function RootLayout({
         style={{ background: 'var(--bg)', color: 'var(--text)' }}
       >
           <main >
-            <Providers>
+            <Providers tokenStatus={tokenStatus}>
             {children}
             </Providers>
           </main>

@@ -26,7 +26,7 @@ type FormData = z.infer<typeof signupSchema>;
 export default function Signup() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
-  const {login} = useAuthContext()
+  const { login } = useAuthContext()
   const form = useForm<FormData>({
     resolver: zodResolver(signupSchema),
     mode: 'onChange',
@@ -43,14 +43,14 @@ export default function Signup() {
     }
     const { username, email, password } = data;
     try {
-      const response = await axios.post(`http://localhost:8000/api/user/signup`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/signup`, {
         username,
         email,
         password,
       });
-      login(response.data.user)
+      login({...response.data.user})
       toast.success(response.data.message || "user registered");
-      router.replace('/interview')
+      router.replace('/interviews')
     } catch (error) {
       console.error("Error during sign-up:", error);
       if (error instanceof AxiosError) {
@@ -58,13 +58,6 @@ export default function Signup() {
       } else {
         toast.error("unexpected error ");
       }
-    }
-    finally {
-      form.reset({
-        email:"",
-        username: "",
-        password: "",
-      })
     }
   }
 

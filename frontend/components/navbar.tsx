@@ -8,7 +8,9 @@ import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { usePathname } from 'next/navigation';
 import { AvatarDropDown } from '@/app/(auth)/_components/AvatarDropdown';
+import { useAuthContext } from '@/context/AuthContext';
 export function Navbar() {
+  const { user, status } = useAuthContext();
 
   const pathname = usePathname();
   return (
@@ -35,6 +37,31 @@ export function Navbar() {
 
           <Link className={`hover:underline transition-all duration-200 px-3 py-1 rounded-lg ${pathname === '/about' ? 'bg-indigo-500/10 text-white border border-indigo-500/20' : 'text-[color:var(--text-dim)] hover:text-[color:var(--text)]'}`} href="/about">About</Link>
 
+        </div>
+
+        <div className="hidden md:flex ">
+          {status === "loading" && (
+            <div className="flex gap-2 animate-out">
+              <Skeleton className="h-9 w-28 bg-neutral-200 dark:bg-neutral-700" />
+            </div>
+          )}
+          {status !== "loading" && status === "unauthenticated" && (
+            <Button asChild className="cursor-pointer">
+              <Link href="/login">Login</Link>
+            </Button>
+          )}
+          {status === "authenticated" && user?.id && (
+            <AvatarDropDown>
+              <Image
+                src={user.avatarUrl || '/user-avatar.png'}
+                alt='User Avatar'
+                height={50}
+                width={50}
+                priority
+                className="rounded-full"
+              />
+            </AvatarDropDown>
+          )}
         </div>
 
       </nav>

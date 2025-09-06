@@ -1,3 +1,4 @@
+'use client'
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -7,13 +8,38 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAuthContext } from "@/context/AuthContext"
+import axios, { AxiosError } from "axios"
 import { User, LogOut } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export function AvatarDropDown({ children }: { children: React.ReactNode }) {
+    const {logout} = useAuthContext()
+    const router = useRouter()
+    const handleLogOut = async () => {
+        try {
+          const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/logout`, null, {
+            withCredentials: true
+          });
+          if (res.data.success) {
+            logout()
+            toast.success("Logged out successfully.");
+            router.push("/login");
+          }
+        } catch (error) {
+          console.error("Failed to logout:", error);
+          if (error instanceof AxiosError) {
+            toast.error(error.response?.data.message);
+          } else {
+            toast.error("unexpected error ");
+          }
+        }
+      }
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className="group relative cursor-pointer rounded-full ring-2 ring-transparent transition-all duration-200 hover:ring-indigo-400 focus:outline-none" asChild>
+            <DropdownMenuTrigger className="group relative cursor-pointer rounded-full ring-2 ring-transparent transition-all duration-200 hover:ring-gray-200 focus:outline-none" asChild>
                 <div className="overflow-hidden rounded-full">
                     {children}
                 </div>
@@ -39,11 +65,11 @@ export function AvatarDropDown({ children }: { children: React.ReactNode }) {
                 
                 <DropdownMenuSeparator className="bg-[color:var(--border)]" />
                 
-                <DropdownMenuItem className="p-1">
+                <DropdownMenuItem className="p-1" asChild>
                     <Button 
                         className="w-full justify-start gap-2 bg-red-600/10 text-red-300 hover:bg-red-600/20 hover:text-red-300 border border-red-700/20 hover:border-red-700/40 transition-all duration-200 group"
                         variant="ghost"
-                        
+                        onClick={handleLogOut}
                     >
                         <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                         Logout

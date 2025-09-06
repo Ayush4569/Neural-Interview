@@ -13,3 +13,7 @@
   --amber: #ffb020;
   --focus: #4b5dff;
 }
+
+[data-slot="sheet-content"] {
+  border:0 !important;
+}
