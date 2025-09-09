@@ -1,15 +1,19 @@
 import { Response, Request } from "express";
 import { prisma } from "../database/db";
+import { calculateFinalInterviewScore } from "../utils/helpers";
+import { summary } from "../types/interview";
 
 export const getInterviews = async (req: Request, res: Response): Promise<void> => {
-    console.log("Fetching interviews for user:", req.user);
     if (!req.user || !req.user.id) {
         res.status(401).json({ error: "Unauthorized", success: false });
         return;
     }
+    const now = new Date()
     try {
         const interviews = await prisma.interview.findMany({
-            where: { userId: req.user.id as string },
+            where: {
+                userId: req.user.id as string
+            },
             orderBy: { createdAt: 'desc' },
             include: {
                 summary: {
@@ -21,6 +25,10 @@ export const getInterviews = async (req: Request, res: Response): Promise<void> 
                         communicationScore: true
                     }
                 }
+            },
+            omit: {
+                additionalPrompt: true,
+                techStack: true
             }
         });
         console.log(`Found ${interviews} for user ${req.user.id}`);
@@ -29,7 +37,30 @@ export const getInterviews = async (req: Request, res: Response): Promise<void> 
             res.status(400).json({ message: "No interviews found", success: false });
             return;
         }
-        res.status(200).json({ interviews, success: true });
+        const interviewsWithAdditionalData = await Promise.all(
+            interviews.map(async (i) => {
+                const type: 'past' | 'upcoming' = i.startTime! > now ? 'upcoming' : 'past'
+
+                let score: number | null = null
+                if (i.status === 'completed' && i.summary) {
+                    score = await calculateFinalInterviewScore(i.summary as summary)
+                }
+                return {
+                    ...i,
+                    type,
+                    score
+                }
+            })
+        )
+        res
+            .status(200)
+            .json(
+                {
+                    interviews: interviewsWithAdditionalData,
+                    success: true,
+                    message:"Interviews fetched"
+                }
+            );
         return;
     } catch (error) {
         console.error("Error fetching interviews:", error);

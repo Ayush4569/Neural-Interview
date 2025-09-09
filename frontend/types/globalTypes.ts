@@ -8,6 +8,7 @@ interface InterviewSummary {
     improvements: string[]
     technicalScore: number
     communicationScore: number
+    finalAiScore: number
 }
 export interface Interview {
     id: string;
@@ -19,6 +20,8 @@ export interface Interview {
     status: 'scheduled' | 'completed' | 'active' | 'expired';
     jobTitle: string;
     createdAt: Date;
+    type: 'past' | 'upcoming';
+    score:number
     additionalPrompt?: string;
     summary: InterviewSummary
     userId: string;
