@@ -25,7 +25,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
             next();
             return;
         }
-
+        
         else {
             res.status(403).json({ success: false, message: 'Invalid token payload' });
             return
