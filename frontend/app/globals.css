@@ -17,3 +17,7 @@
 [data-slot="sheet-content"] {
   border:0 !important;
 }
+
+::-webkit-scrollbar {
+  display: none;
+}

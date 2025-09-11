@@ -4,6 +4,9 @@ import { accessTokenOptions, refreshTokenOptions } from "../utils/cookies";
 import { decodeRefreshToken, generateAccessToken, generateRefreshToken } from "../utils/generateTokens";
 import { hashPassword } from "../utils/helpers";
 import bcrypt from "bcrypt"
+import { uploadToCloudinary } from "../service/cloudinary.service";
+import { registerSchema } from "../schemas";
+import z from "zod";
 
 export const getUser = async (req: Request, res: Response) => {
     if (!req.user) {
@@ -49,7 +52,7 @@ export const getUser = async (req: Request, res: Response) => {
 }
 
 export const registerUser = async (req: Request, res: Response) => {
-    const { username, email, password } = req.body
+    const { username, email, password,avatarUrl } = req.body
     try {
         const isExistingUser = await prisma.user.findUnique({
             where: {
@@ -66,13 +69,27 @@ export const registerUser = async (req: Request, res: Response) => {
             });
             return
         }
+        let avatarUrlFinal: string | undefined = undefined;
+        if (avatarUrl.trim() !== '') {
+            try {
+              avatarUrlFinal = await uploadToCloudinary(avatarUrl);
+            } catch (error) {
+              return res.status(400).json({
+                success: false,
+                message: (error as Error).message || "Error uploading image",
+              });
+            }
+          }
         const hashedPassword = await hashPassword(password)
-
+        const userObject: z.infer<typeof registerSchema> = {
+            email,
+            username,
+            password: hashedPassword,
+            ...(avatarUrlFinal ? {avatarUrl:avatarUrlFinal} : {})
+          };
         const newUser = await prisma.user.create({
             data: {
-                username,
-                email,
-                password: hashedPassword
+               ...userObject
             },
             select: {
                 id: true,

@@ -30,7 +30,7 @@ export default function Signup() {
   const form = useForm<FormData>({
     resolver: zodResolver(signupSchema),
     mode: 'onChange',
-    defaultValues: { username: '', email: '', password: '' },
+    defaultValues: { username: '', email: '', password: '', avatarUrl: '' },
   });
 
   const isSubmitting = form.formState.isSubmitting;
@@ -41,16 +41,18 @@ export default function Signup() {
       toast.error(result.error.format()._errors.toString());
       return;
     }
-    const { username, email, password } = data;
+    const { username, email, password, avatarUrl } = result.data;
+
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/signup`, {
         username,
         email,
         password,
+        avatarUrl
       });
-      login({...response.data.user})
+      login({ ...response.data.user })
       toast.success(response.data.message || "user registered");
-      router.replace('/interviews')
+      router.replace('/')
     } catch (error) {
       console.error("Error during sign-up:", error);
       if (error instanceof AxiosError) {
@@ -153,6 +155,29 @@ export default function Signup() {
                         >
                           {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
+                      </div>
+                    </FormControl>
+                    <FormDescription className="text-[color:var(--text-dim)]">
+                      Password must be at least 6 characters
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Image upload */}
+              <FormField
+                control={form.control}
+                name="avatarUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor='avatar' className="text-[color:var(--text)]">Avatar </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          id='avatar'
+                          type='file'
+                          {...field}
+                        />
                       </div>
                     </FormControl>
                     <FormDescription className="text-[color:var(--text-dim)]">

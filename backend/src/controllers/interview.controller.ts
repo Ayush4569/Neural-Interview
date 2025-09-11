@@ -31,10 +31,9 @@ export const getInterviews = async (req: Request, res: Response): Promise<void> 
                 techStack: true
             }
         });
-        console.log(`Found ${interviews} for user ${req.user.id}`);
 
         if (interviews.length === 0) {
-            res.status(400).json({ message: "No interviews found", success: false });
+            res.status(200).json({ message: "No interviews found", success: true });
             return;
         }
         const interviewsWithAdditionalData = await Promise.all(

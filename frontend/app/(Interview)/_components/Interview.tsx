@@ -1,29 +1,76 @@
 'use client'
 import React from 'react'
-import { Calendar, User, Star } from 'lucide-react';
+import { Calendar, User, Star, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InterviewCard from '../_components/InterviewCard';
 import EmptyState from '../_components/EmptyState';
 import { useGetInterviews } from '@/hooks/useInterview';
-import Loading from '@/app/loading';
+import { useInterviewStats } from '@/hooks/useInterviewAnalytics';
+import InterviewDashboardSkeleton from './InterviewSkeleton';
+import { useRouter } from 'next/navigation';
 
 
 const Interview = () => {
-    const {data:interviews,isPending,error,isError} = useGetInterviews();
-    if(isPending) {
-        return <Loading/>
-    } else if(isError) {
-        return <span>Error: {error.message}</span>
+    const { data: interviews = [], isPending, error, isError, refetch } = useGetInterviews();
+    const router = useRouter()
+    const {
+        upcomingInterviews,
+        pastInterviews,
+        avgScore,
+        totalInterviews,
+        completedInterviews
+    } = useInterviewStats(interviews,isPending,isError);
+    
+    
+    if (isPending) {
+        return <InterviewDashboardSkeleton />;
     }
-    const upcomingInterviews = interviews.filter(({type})=> type=='upcoming')
-    const pastInterviews = interviews.filter(({type})=> type=='past')
-    const totalScore = interviews.reduce((acc,interview)=>{
-        if(interview.type === 'upcoming') return 0;
-        return acc + interview.score
-    },0)
-    const avgScore = totalScore/pastInterviews.length
+    
+    else if (isError) {
+        return (
+            <main className='w-full h-screen '>
+                <div className="w-full h-full flex items-center justify-center ">
+                    <Card className="p-8 text-center border-0" >
+                        <div className="space-y-4">
+                            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <RefreshCw className="h-8 w-8 text-red-600" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-semibold text-[color:var(--text)] mb-2">
+                                    Unable to load interviews
+                                </h2>
+                                <p className="text-[color:var(--text-dim)] mb-6">
+                                    {error?.message || 'Something went wrong while fetching your interviews. Please try again.'}
+                                </p>
+                                <div className="flex gap-3 justify-center">
+                                    <Button 
+                                        onClick={() => refetch()}
+                                        style={{ background: 'linear-gradient(135deg, var(--indigo), var(--coral))' }}
+                                        className="text-[#0E1116] cursor-pointer"
+                                    >
+                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                        Try Again
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={() => router.push('/')}
+                                        className="border-white text-lg text-[color:var(--text)] cursor-pointer"
+                                    >
+                                        Go Home
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            </main>
+        );
+    }
+    
+    
     return (
         <main>
             <div className="container mx-auto px-4 sm:px-6 py-8">
@@ -35,6 +82,7 @@ const Interview = () => {
                         Track your interview progress, review past performances, and manage upcoming sessions all in one place.
                     </p>
                 </div>
+
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     <Card style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
@@ -42,7 +90,7 @@ const Interview = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-[color:var(--text-dim)]">Total Interviews</p>
-                                    <p className="text-2xl font-bold text-[color:var(--text)]">{pastInterviews.length + upcomingInterviews.length}</p>
+                                    <p className="text-2xl font-bold text-[color:var(--text)]">{totalInterviews}</p>
                                 </div>
                                 <User className="h-8 w-8 text-[color:var(--indigo)]" />
                             </div>
@@ -54,7 +102,14 @@ const Interview = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-[color:var(--text-dim)]">Average Score</p>
-                                    <p className="text-2xl font-bold text-[color:var(--mint)]">{avgScore}%</p>
+                                    <div className="flex items-baseline gap-1">
+                                        <p className="text-2xl font-bold text-[color:var(--mint)]">{avgScore}%</p>
+                                        {completedInterviews! > 0 && (
+                                            <span className="text-xs text-[color:var(--text-dim)]">
+                                                ({completedInterviews} completed)
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <Star className="h-8 w-8 text-[color:var(--amber)]" />
                             </div>
