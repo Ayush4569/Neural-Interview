@@ -15,7 +15,7 @@
 }
 
 [data-slot="sheet-content"] {
-  border:0 !important;
+  border: 0 !important;
 }
 
 ::-webkit-scrollbar {

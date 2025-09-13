@@ -21,34 +21,41 @@ import axios, { AxiosError } from 'axios';
 import { useAuthContext } from '@/context/AuthContext';
 
 
-type FormData = z.infer<typeof signupSchema>;
+
 
 export default function Signup() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const { login } = useAuthContext()
-  const form = useForm<FormData>({
+  const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     mode: 'onChange',
-    defaultValues: { username: '', email: '', password: '', avatarUrl: '' },
+    defaultValues: { username: '', email: '', password: '', avatarUrl: undefined },
   });
 
   const isSubmitting = form.formState.isSubmitting;
 
-  async function onSubmit(data: FormData) {
+  async function onSubmit(data: z.infer<typeof signupSchema>) {
     const result = signupSchema.safeParse(data);
     if (!result.success) {
       toast.error(result.error.format()._errors.toString());
       return;
     }
     const { username, email, password, avatarUrl } = result.data;
+    console.log(result.data);
 
+    const formData = new FormData()
+    formData.append("username", username)
+    formData.append("email", email)
+    formData.append("password", password)
+    if (avatarUrl && avatarUrl.size) {
+      formData.append("avatarUrl", avatarUrl)
+    }
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/signup`, {
-        username,
-        email,
-        password,
-        avatarUrl
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/signup`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
       });
       login({ ...response.data.user })
       toast.success(response.data.message || "user registered");
@@ -170,13 +177,18 @@ export default function Signup() {
                 name="avatarUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor='avatar' className="text-[color:var(--text)]">Avatar </FormLabel>
+                    <FormLabel htmlFor='avatarUrl' className="text-[color:var(--text)]">Avatar </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
-                          id='avatar'
+                          id='avatarUrl'
+                          accept='image/*'
                           type='file'
-                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e.target.files?.[0] ?? undefined)
+                          }}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
                         />
                       </div>
                     </FormControl>

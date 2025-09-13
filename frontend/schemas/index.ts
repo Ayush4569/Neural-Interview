@@ -12,6 +12,6 @@ export const signupSchema = z.object({
     ,
     email: z.email(),
     password: z.string().min(6, { message: "Password must be 6 characters" }),
-    avatarUrl: z.string().optional()
+    avatarUrl: z.instanceof(File).optional()
 })
 

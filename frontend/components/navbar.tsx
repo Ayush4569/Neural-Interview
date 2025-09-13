@@ -57,8 +57,7 @@ export function Navbar() {
                 alt='User Avatar'
                 height={50}
                 width={50}
-                priority
-                className="rounded-full"
+                className='object-cover'
               />
             </AvatarDropDown>
           )}

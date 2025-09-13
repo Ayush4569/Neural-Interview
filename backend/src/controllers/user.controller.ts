@@ -5,7 +5,7 @@ import { decodeRefreshToken, generateAccessToken, generateRefreshToken } from ".
 import { hashPassword } from "../utils/helpers";
 import bcrypt from "bcrypt"
 import { uploadToCloudinary } from "../service/cloudinary.service";
-import { registerSchema } from "../schemas";
+import { signupSchema } from "../schemas";
 import z from "zod";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
@@ -48,7 +48,7 @@ export const getUser = asyncHandler(async (req: Request, res: Response) => {
 
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
     const { username, email, password, avatarUrl } = req.body
-
+    
     const isExistingUser = await prisma.user.findUnique({
         where: {
             email
@@ -61,9 +61,9 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
         throw new CustomError(400, "User already exist")
     }
     let avatarUrlFinal: string | undefined = undefined;
-    if (avatarUrl.trim() !== '') {
+    if (req.file) {
         try {
-            avatarUrlFinal = await uploadToCloudinary(avatarUrl);
+            avatarUrlFinal = await uploadToCloudinary(req.file?.path!);
         } catch (error) {
             return res.status(400).json({
                 success: false,
@@ -72,7 +72,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
         }
     }
     const hashedPassword = await hashPassword(password)
-    const userObject: z.infer<typeof registerSchema> = {
+    const userObject = {
         email,
         username,
         password: hashedPassword,
