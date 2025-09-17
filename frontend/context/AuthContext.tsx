@@ -1,12 +1,8 @@
+import { User } from "@/types/globalTypes";
 import { ReactNode, createContext, useContext, useState } from "react";
 
 type Status = 'authenticated' | 'unauthenticated' | 'loading';
-type User = {
-    id: string;
-    email: string;
-    username: string;
-    avatarUrl: string;
-}
+
 type AuthContextType = {
     status: Status;
     user: User | null;

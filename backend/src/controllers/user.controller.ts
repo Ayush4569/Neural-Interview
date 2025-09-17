@@ -5,8 +5,6 @@ import { decodeRefreshToken, generateAccessToken, generateRefreshToken } from ".
 import { hashPassword } from "../utils/helpers";
 import bcrypt from "bcrypt"
 import { uploadToCloudinary } from "../service/cloudinary.service";
-import { signupSchema } from "../schemas";
-import z from "zod";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
 
@@ -47,7 +45,7 @@ export const getUser = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
-    const { username, email, password, avatarUrl } = req.body
+    const { username, email, password } = req.body
     
     const isExistingUser = await prisma.user.findUnique({
         where: {
@@ -90,6 +88,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
         }
     });
     const accessToken = generateAccessToken(newUser)
+    
     res.
         status(201)
         .cookie("accessToken", accessToken, accessTokenOptions)

@@ -20,9 +20,6 @@ import { toast } from 'sonner';
 import axios, { AxiosError } from 'axios';
 import { useAuthContext } from '@/context/AuthContext';
 
-
-
-
 export default function Signup() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
@@ -42,7 +39,6 @@ export default function Signup() {
       return;
     }
     const { username, email, password, avatarUrl } = result.data;
-    console.log(result.data);
 
     const formData = new FormData()
     formData.append("username", username)
@@ -55,7 +51,8 @@ export default function Signup() {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/signup`, formData, {
         headers: {
           "Content-Type": "multipart/form-data"
-        }
+        },
+        withCredentials:true
       });
       login({ ...response.data.user })
       toast.success(response.data.message || "user registered");
@@ -107,7 +104,7 @@ export default function Signup() {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className='text-red-700'/>
                   </FormItem>
                 )}
               />
@@ -132,7 +129,7 @@ export default function Signup() {
                         />
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className='text-red-700'/>
                   </FormItem>
                 )}
               />
@@ -167,7 +164,7 @@ export default function Signup() {
                     <FormDescription className="text-[color:var(--text-dim)]">
                       Password must be at least 6 characters
                     </FormDescription>
-                    <FormMessage />
+                    <FormMessage className='text-red-700'/>
                   </FormItem>
                 )}
               />

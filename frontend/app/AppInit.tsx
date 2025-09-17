@@ -39,7 +39,6 @@ export default function AppInit({ hasAccessToken, hasRefreshToken }:
     useEffect(() => {
 
         if (query.data) {
-            console.log("User data fetched:", query.data);
             login({...query.data})
         }
     }, [query.isSuccess, query.data]);

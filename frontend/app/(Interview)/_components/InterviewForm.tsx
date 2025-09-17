@@ -40,17 +40,10 @@ import { TimeState } from '@/types/globalTypes';
 import { DURATION_OPTIONS, EXPERIENCE_LEVELS } from "@/constants/index";
 import { toast } from 'sonner';
 import { DialogDescription } from '@radix-ui/react-dialog';
-const formSchema = z.object({
-    jobTitle: z.string().min(2, "Job title must be at least 2 characters"),
-    techStack: z.string().min(2, "Tech stack is required"),
-    experienceLevel: z.string().min(1, "Experience level is required"),
-    callDuration: z.number().min(5).max(120),
-    additionalPrompt: z.string().optional(),
-    schedule: z.enum(["now", "future"]),
-    scheduledDate: z.date().optional(),
-});
+import { interviewFormSchema } from '@/schemas';
 
-type FormData = z.infer<typeof formSchema>;
+
+type FormData = z.infer<typeof interviewFormSchema>;
 
 interface CreateInterviewModalProps {
     children: React.ReactNode;
@@ -64,16 +57,16 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
     const [selectedTime, setSelectedTime] = useState<TimeState>(DEFAULT_TIME);
-    const isPaidUser = false; // Replace with actual user check
+    const isPaidUser = false; // Replace with actual user subscription status
     const formConfig = useMemo(() => ({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(interviewFormSchema),
         defaultValues: {
             jobTitle: "",
             techStack: "",
             experienceLevel: "",
             callDuration: 5,
             additionalPrompt: "",
-            schedule: "now" as const,
+            schedule: interviewFormSchema.shape.schedule.enum.now,
             scheduledDate: undefined,
         },
     }), []);
@@ -108,6 +101,8 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                 combinedDateTime.setHours(parseInt(selectedTime.hour));
                 combinedDateTime.setMinutes(parseInt(selectedTime.minute));
                 data.scheduledDate = combinedDateTime;
+                console.log("combinedDateTime",combinedDateTime);
+                
             }
             console.log("Creating interview with data:", data);
             setIsOpen(false);

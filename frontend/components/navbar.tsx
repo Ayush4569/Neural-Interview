@@ -57,6 +57,7 @@ export function Navbar() {
                 alt='User Avatar'
                 height={50}
                 width={50}
+                style={{ height: 50, width: 50 }}
                 className='object-cover'
               />
             </AvatarDropDown>

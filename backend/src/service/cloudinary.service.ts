@@ -14,11 +14,9 @@ cloudinary.config({
             resource_type:'image',
             overwrite:true
         })
-        console.log('upload res',upload);
         if(upload.url && typeof(upload.url)=== 'string') {
             fs.unlink(imagePath,(err)=> {
                 if(err) console.log("Error deleting file",err);
-                console.log('File deleted');
             });
             return upload.secure_url as string
         }

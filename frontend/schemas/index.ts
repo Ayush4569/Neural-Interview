@@ -15,3 +15,12 @@ export const signupSchema = z.object({
     avatarUrl: z.instanceof(File).optional()
 })
 
+export const interviewFormSchema = z.object({
+    jobTitle: z.string().min(2, "Job title must be at least 2 characters"),
+    techStack: z.string().min(2, "Tech stack is required"),
+    experienceLevel: z.string().min(1, "Experience level is required"),
+    callDuration: z.number().min(5).max(60),
+    additionalPrompt: z.string().optional(),
+    schedule: z.enum(["now", "future"]),
+    scheduledDate: z.date().optional(),
+});
