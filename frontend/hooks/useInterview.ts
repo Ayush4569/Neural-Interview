@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 export const useGetInterviews = () => {
-    const pathname = usePathname();
+   const pathname = usePathname();
    return useQuery<Interview[],Error>({
         queryKey:['interviews'],
         staleTime: 5*60*1000,

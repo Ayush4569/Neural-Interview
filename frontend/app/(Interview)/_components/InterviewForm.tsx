@@ -102,11 +102,15 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                 combinedDateTime.setMinutes(parseInt(selectedTime.minute));
                 data.scheduledDate = combinedDateTime;
                 console.log("combinedDateTime",combinedDateTime);
-                
             }
-            console.log("Creating interview with data:", data);
-            setIsOpen(false);
-            resetForm();
+            const {data:axiosData} = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview`,data,{
+                withCredentials:true
+            })
+            if(axiosData.success) {
+                setIsOpen(false);
+                resetForm();
+                toast.success(axiosData.message || "Interview created")
+            }
         } catch (error) {
             console.error('Error creating interview:', error);
             toast.error("Failed to create interview. Please try again.");

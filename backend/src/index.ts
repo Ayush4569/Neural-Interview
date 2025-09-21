@@ -8,14 +8,14 @@ import userRoutes from './routes/user.routes';
 import { errorHandler } from './utils/apiError';
 const app = express();
 
-// connectDB()
-//   .then(() => {
-//     console.log("Database connected successfully");
-//   })
-//   .catch((error: Error) => {
-//     console.error(error.message || "Database connection failed");
-//     process.exit(1);
-//   });
+connectDB()
+  .then(() => {
+    console.log("Database connected successfully");
+  })
+  .catch((error: Error) => {
+    console.error(error.message || "Database connection failed");
+    process.exit(1);
+  });
 
 // Middleware to parse JSON
 app.use(cors({

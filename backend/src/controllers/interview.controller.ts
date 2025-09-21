@@ -27,8 +27,7 @@ export const getInterviews = asyncHandler(async (req: Request, res: Response) =>
             }
         },
         omit: {
-            additionalPrompt: true,
-            techStack: true
+            additionalPrompt: true
         }
     });
 
@@ -66,15 +65,7 @@ export const createInterview = asyncHandler(async(req: Request, res: Response) =
     if (!req.user || !req.user.id) {
         throw new CustomError(401, "Unauthorized")
     }
-    const { jobTitle, techStack, experienceLevel, callDuration, additionalPrompt, schedule, scheduledDate } = req.body as {
-        jobTitle: string;
-        techStack: string;
-        experienceLevel: 'fresher' | 'mid' | 'lead' | 'senior';
-        callDuration: number;
-        additionalPrompt?: string;
-        schedule: 'now' | 'future';
-        scheduledDate?: Date;
-    }
+    const { jobTitle, techStack, experienceLevel, callDuration, additionalPrompt, schedule, scheduledDate } = req.body;
     if ([jobTitle, techStack, experienceLevel, callDuration, schedule].some(field => !field)) {
         throw new CustomError(400, "All fields are required")
     }
@@ -82,7 +73,6 @@ export const createInterview = asyncHandler(async(req: Request, res: Response) =
         // Logic to schedule the interview immediately
         console.log("Scheduling interview now");
     } else {
-
         if (!scheduledDate) {
             throw new CustomError(400, "Scheduled date is required for later interviews")
         }
