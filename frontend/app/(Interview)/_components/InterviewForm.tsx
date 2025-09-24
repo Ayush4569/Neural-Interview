@@ -57,7 +57,7 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
     const [selectedTime, setSelectedTime] = useState<TimeState>(DEFAULT_TIME);
-    const isPaidUser = false; // Replace with actual user subscription status
+    const isPaidUser = false;
     const formConfig = useMemo(() => ({
         resolver: zodResolver(interviewFormSchema),
         defaultValues: {
@@ -101,12 +101,11 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                 combinedDateTime.setHours(parseInt(selectedTime.hour));
                 combinedDateTime.setMinutes(parseInt(selectedTime.minute));
                 data.scheduledDate = combinedDateTime;
-                console.log("combinedDateTime",combinedDateTime);
             }
-            const {data:axiosData} = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview`,data,{
-                withCredentials:true
+            const { data: axiosData } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview`, data, {
+                withCredentials: true
             })
-            if(axiosData.success) {
+            if (axiosData.success) {
                 setIsOpen(false);
                 resetForm();
                 toast.success(axiosData.message || "Interview created")
@@ -256,7 +255,7 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                                                 <SelectItem
                                                     key={option.value}
                                                     value={option.value.toString()}
-                                                    className="text-[color:var(--text)] hover:bg-indigo-500/10 focus:bg-indigo-500/10"
+                                                    className="text-[color:var(--text)] hover:bg-indigo-500/10 focus:bg-indigo-500∏/10"
                                                 >
                                                     <div className="flex items-center justify-between w-full">
                                                         <span>{option.label}</span>

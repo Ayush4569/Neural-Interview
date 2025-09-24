@@ -4,6 +4,7 @@ import { calculateFinalInterviewScore } from "../utils/helpers";
 import { summary } from "../types/interview";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
+import { vapiService } from "service/vapi.service";
 
 export const getInterviews = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
@@ -61,7 +62,7 @@ export const getInterviews = asyncHandler(async (req: Request, res: Response) =>
         );
 })
 
-export const createInterview = asyncHandler(async(req: Request, res: Response) => {
+export const createInterview = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
         throw new CustomError(401, "Unauthorized")
     }
@@ -95,3 +96,90 @@ export const createInterview = asyncHandler(async(req: Request, res: Response) =
         return;
     }
 })
+
+
+export const startInterview = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.id) {
+        throw new CustomError(401, "Unauthorized");
+    }
+
+    const { interviewId } = req.params;
+
+
+    const interview = await prisma.interview.findFirst({
+        where: { id: interviewId, userId: req.user.id, status: 'scheduled' },
+        include: {
+            vapisession: {
+                select: {
+                    vapiSessionUrl: true
+                }
+            }
+        }
+    });
+
+    if (!interview) {
+        throw new CustomError(404, "No such interview");
+    }
+
+    if (!interview.startTime) {
+        throw new CustomError(400, "Interview is not scheduled yet");
+    }
+
+    const now = new Date();
+    const scheduled = new Date(interview.startTime);
+    const allowedJoinTime = new Date(scheduled.getTime() - 5 * 60 * 1000);
+    const expireTime = new Date(scheduled.getTime() + 30 * 60 * 1000);
+
+    if (now < allowedJoinTime) {
+        const mins = Math.ceil((allowedJoinTime.getTime() - now.getTime()) / (1000 * 60));
+        throw new CustomError(400, `Interview will be available to join in ${mins} minute(s)`);
+    }
+
+    if (now > expireTime) {
+        await prisma.interview.update({
+            where: { id: interview.id },
+            data: { status: "expired" },
+        });
+        throw new CustomError(400, "Interview has expired");
+    }
+
+    if (interview.vapisession?.vapiSessionUrl) {
+        return res.status(200).json({
+            success: true,
+            message: "Session already started",
+            sessionId: interview.vapisession?.vapiSessionUrl,
+        });
+    }
+
+    const session = await vapiService.createInterviewSession(interview);
+
+    if (!session?.sessionId) {
+        throw new CustomError(500, "Error generating session");
+    }
+
+    await prisma.vapiSession.create({
+        data: {
+            interviewId: interview.id,
+            vapiSessionUrl: session.sessionId,
+            vapiCallId: "",
+            status: 'active',
+            startedAt: now,
+            expiresAt: scheduled.getMinutes() + interview.durationMinutes.toString()
+        }
+    })
+
+    await prisma.interview.update({
+        where: {
+            id: interview.id
+        },
+        data: {
+            status: 'active'
+        }
+    })
+
+    return res.status(200).json({
+        success: true,
+        message: "Session started",
+        sessionId: session.sessionId
+    });
+});
