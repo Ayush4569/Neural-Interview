@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Interview } from '@/types/globalTypes';
 
 const InterviewCard = ({ interview, isPast }: { interview: Interview; isPast: boolean }) => {
-  console.log(interview);
   const techStack: string[] = interview.techStack.split(',');
   return (
     <Card className="group hover:-translate-y-1 transition-all duration-300 hover:shadow-xl border-[color:var(--border)]" style={{ background: 'var(--surface)' }}>
@@ -78,7 +77,7 @@ const InterviewCard = ({ interview, isPast }: { interview: Interview; isPast: bo
           )}
         </div>
         <Button size="sm" asChild className="h-7 px-3 text-xs">
-          <Link href={isPast ? `/interviews/${interview.id}/report` : `/interviews/${interview.id}`}
+          <Link href={isPast ? `/interviews/${interview.id}/report` : `/interviews/${interview.id}/preview`}
             style={{
               background: isPast ? 'var(--indigo)' : 'linear-gradient(135deg, var(--indigo), var(--coral))',
               color: '#0E1116'

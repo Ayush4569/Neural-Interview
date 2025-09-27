@@ -4,7 +4,7 @@ import { calculateFinalInterviewScore } from "../utils/helpers";
 import { summary } from "../types/interview";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
-import { vapiService } from "service/vapi.service";
+import { vapiService } from "../service/vapi.service";
 
 export const getInterviews = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
@@ -62,6 +62,27 @@ export const getInterviews = asyncHandler(async (req: Request, res: Response) =>
         );
 })
 
+export const getInterviewById = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+        throw new CustomError(401, "Unauthorized")
+    }
+    const { interviewId } = req.params;
+    if (!interviewId) {
+        throw new CustomError(400, "Interview ID is required")
+    }
+    const interview = await prisma.interview.findFirst({
+        where: {
+            id: interviewId,
+            userId: req.user.id as string,
+        }
+    });
+    if (!interview) {
+        throw new CustomError(404, "No such interview found")
+    }
+    res.status(200).json({ interview, success: true, message: "Interview fetched successfully" })
+    return;
+});
+
 export const createInterview = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
         throw new CustomError(401, "Unauthorized")
@@ -96,7 +117,6 @@ export const createInterview = asyncHandler(async (req: Request, res: Response) 
         return;
     }
 })
-
 
 export const startInterview = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user?.id) {
@@ -183,3 +203,4 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
         sessionId: session.sessionId
     });
 });
+
