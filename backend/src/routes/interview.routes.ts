@@ -8,5 +8,5 @@ router.get("/",authMiddleware,getInterviews)
 router.get("/:interviewId",authMiddleware,getInterviewById)
 
 router.post("/",authMiddleware,createInterview)
-router.get("/start/:interviewId",authMiddleware,startInterview)
+router.post("/start/:interviewId",authMiddleware,startInterview)
 export default router;

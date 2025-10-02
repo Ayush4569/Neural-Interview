@@ -99,7 +99,7 @@ export const createInterview = asyncHandler(async (req: Request, res: Response) 
             throw new CustomError(400, "Scheduled date is required for later interviews")
         }
         const interviewStartTime = new Date(scheduledDate)
-        const interviewEndTime = new Date(interviewStartTime.getTime() + 7 * 60 * 1000)
+        const interviewEndTime = new Date(interviewStartTime.getTime() + 7 * 60 * 1000) // 
         await prisma.interview.create({
             data: {
                 jobTitle,
@@ -119,8 +119,8 @@ export const createInterview = asyncHandler(async (req: Request, res: Response) 
 })
 
 export const startInterview = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.user?.id) {
-        throw new CustomError(401, "Unauthorized");
+    if (!req.user || !req.user.id) {
+        throw new CustomError(401, "Unauthorized")
     }
 
     const { interviewId } = req.params;
@@ -145,6 +145,14 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
         throw new CustomError(400, "Interview is not scheduled yet");
     }
 
+    if (interview.vapisession?.vapiSessionUrl) {
+        return res.status(200).json({
+            success: true,
+            message: "Session already started",
+            sessionId: interview.vapisession?.vapiSessionUrl,
+        });
+    }
+
     const now = new Date();
     const scheduled = new Date(interview.startTime);
     const allowedJoinTime = new Date(scheduled.getTime() - 5 * 60 * 1000);
@@ -161,14 +169,6 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
             data: { status: "expired" },
         });
         throw new CustomError(400, "Interview has expired");
-    }
-
-    if (interview.vapisession?.vapiSessionUrl) {
-        return res.status(200).json({
-            success: true,
-            message: "Session already started",
-            sessionId: interview.vapisession?.vapiSessionUrl,
-        });
     }
 
     const session = await vapiService.createInterviewSession(interview);

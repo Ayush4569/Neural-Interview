@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Mic, MicOff, User2, Cpu, Briefcase, Clock, CheckCircle2 } from 'lucide-react';
 import { useGetInterviewById } from '@/hooks/useGetInterviewByid';
@@ -11,6 +10,7 @@ import { useAuthContext } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Loading from '@/app/loading';
 import { toast } from 'sonner';
+import axios, { isAxiosError } from 'axios';
 
 export default function PrejoinPanel({
   id
@@ -25,6 +25,7 @@ export default function PrejoinPanel({
   const { user } = useAuthContext()
   const router = useRouter()
   const { data: interview, isPending, isError, error } = useGetInterviewById({ id })
+
   const requestMic = async () => {
     try {
       if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
@@ -70,7 +71,7 @@ export default function PrejoinPanel({
 
       updateMeter()
 
-    } catch (err: any) {
+    } catch (err:any) {
       setIsMicAllowed(false);
       console.error("Mic request failed:", err);
       if (err?.name === "NotAllowedError") {
@@ -105,6 +106,23 @@ export default function PrejoinPanel({
     }
   }
 
+  const handleJoinRoom = async()=>{
+    try {
+      const {data} = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview/start/${id}`,null,{withCredentials:true})
+
+      if(data.success) {
+        router.replace(`/interviews/${id}/${data.sessionId}`)
+        toast.success(data.message ?? "Session started")
+      }
+
+    } catch (error) {
+      console.log('Error joining room',error);
+      toast.error(
+        isAxiosError(error) ? error.response?.data.message : "Failed to join interview"
+      )
+    }
+  }
+
   useEffect(() => {
     requestMic()
 
@@ -112,6 +130,7 @@ export default function PrejoinPanel({
       stopMic()
     }
   }, [])
+
   if (isPending) {
     return <Loading />
   }
@@ -121,8 +140,6 @@ export default function PrejoinPanel({
     return null
   }
 
-
-  const canJoin = micAllowed
   return (
     <div className="min-h-[70vh] w-full px-4 py-8 sm:px-6 flex items-center justify-center" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <Card className="w-full max-w-3xl border-[color:var(--border)]" style={{ background: 'var(--surface)' }}>
@@ -224,8 +241,8 @@ export default function PrejoinPanel({
           {/* Actions */}
           <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm text-[color:var(--text-dim)]">
-              <CheckCircle2 className={`h-4 w-4 ${canJoin ? 'text-[color:var(--mint)]' : 'text-[color:var(--coral)]'}`} />
-              {canJoin ? 'All checks passed' : 'Allow mic to proceed'}
+              <CheckCircle2 className={`h-4 w-4 ${micAllowed ? 'text-[color:var(--mint)]' : 'text-[color:var(--coral)]'}`} />
+              {micAllowed ? 'All checks passed' : 'Allow mic to proceed'}
             </div>
             <div className="flex gap-3">
               <Button
@@ -236,8 +253,9 @@ export default function PrejoinPanel({
                 Back
               </Button>
               <Button
-                className="text-[#0E1116] font-semibold disabled:opacity-50"
-                disabled={!canJoin}
+                className="text-[#0E1116] font-semibold disabled:opacity-50 hover:scale-105 transition-transform"
+                disabled={!micAllowed}
+                onClick={handleJoinRoom}
                 style={{ background: 'linear-gradient(135deg, var(--indigo), var(--coral))' }}
               >
                 Join Interview
