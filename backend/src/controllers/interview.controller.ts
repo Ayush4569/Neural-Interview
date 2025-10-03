@@ -1,10 +1,9 @@
 import { Response, Request } from "express";
 import { prisma } from "../database/db";
-import { calculateFinalInterviewScore } from "../utils/helpers";
+import { assistantLockHash, calculateFinalInterviewScore, canonicalizeAssistant, generateInterviewConfig, mintVapiWebToken } from "../utils/helpers";
 import { summary } from "../types/interview";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
-import { vapiService } from "../service/vapi.service";
 
 export const getInterviews = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
@@ -171,16 +170,21 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
         throw new CustomError(400, "Interview has expired");
     }
 
-    const session = await vapiService.createInterviewSession(interview);
+    const config = generateInterviewConfig(interview)
+    const canonical = canonicalizeAssistant(config.assistant)
+    const assistantLock = assistantLockHash(canonical)
 
-    if (!session?.sessionId) {
-        throw new CustomError(500, "Error generating session");
-    }
-
+    const token = mintVapiWebToken(
+        interviewId,
+        req.user.id,
+        600,
+        assistantLock,
+        crypto.randomUUID(),
+    );
     await prisma.vapiSession.create({
         data: {
             interviewId: interview.id,
-            vapiSessionUrl: session.sessionId,
+            vapiSessionUrl: "",
             vapiCallId: "",
             status: 'active',
             startedAt: now,
@@ -200,7 +204,9 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
     return res.status(200).json({
         success: true,
         message: "Session started",
-        sessionId: session.sessionId
+        config,
+        token,
+        assistantLock
     });
 });
 
