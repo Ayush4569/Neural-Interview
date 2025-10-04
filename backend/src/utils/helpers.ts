@@ -4,36 +4,36 @@ import crypto from 'crypto'
 import { summary } from "../types/interview";
 import { Interview } from "types/interview";
 import jwt from "jsonwebtoken";
-type partialInterview = Pick<Interview, 'jobTitle' | 'techStack' | 'additionalPrompt' | 'durationMinutes' | 'expLevel'>
+type partialInterview = Pick<Interview, 'id'|'jobTitle' | 'techStack' | 'additionalPrompt' | 'durationMinutes' | 'expLevel'>
 
 
 export const hashPassword = async (password: string): Promise<string> => await bcrypt.hash(password, 10);
 
 
-export const canonicalizeAssistant = (assitantConfig: unknown): string => {
-  return JSON.stringify(assitantConfig, Object.keys(assitantConfig as any).sort())
+export const canonicalizeAssistant = (assitantConfig: object): string => {
+  return JSON.stringify(assitantConfig, Object.keys(assitantConfig).sort())
 }
 
 export const assistantLockHash = (input: string): string => {
   return crypto.createHash("sha256").update(input).digest("hex")
 }
 
-export const mintVapiWebToken = (interviewId: string, userId: string, ttLs?: number, assistantLockHash?: string, jti?: string) => {
+export const mintVapiWebToken = (interviewId: string, userId: string, ttLs: number=600, assistantLockHash: string, jti: string) => {
   const now = Math.floor(Date.now() / 1000)
   const payload = {
+    jti,
     sub: `user:${userId}`,
     interviewId: interviewId,
     maxUses: 1,
     aud: "web",
     iat: now,
-    expiry: ttLs ? now + ttLs : now + 600,
-    ...(assistantLockHash ? { assistantLockHash } : {}),
-    ...(jti ? { jti } : {})
+    expiry: now+ttLs,
+    assistantLockHash 
   }
 
   return jwt.sign(payload, process.env.VAPI_KEY!, { algorithm: "HS256" })
 }
-export const generateInterviewConfig = (interview: partialInterview) => {
+export const generateInterviewConfig = (interview: partialInterview,userId:string) => {
   return {
     assistant: {
       name: `${interview.jobTitle} Interview Assistant`,
@@ -71,7 +71,7 @@ export const generateInterviewConfig = (interview: partialInterview) => {
       },
       firstMessage: `Hello! Welcome to your ${interview.jobTitle} interview. I'm your AI interviewer today. This will be a ${interview.durationMinutes}-minute conversation about your experience with ${interview.techStack}. Are you ready to begin?`,
       maxDurationSeconds: interview.durationMinutes * 60,
-      silenceTimeoutSeconds: 30,
+      // silenceTimeoutSeconds: 30,
       endCallMessage: "Thank you for taking the time to participate in this interview. This concludes our session. It was great learning more about your background and experience. You will receive follow-up summary regarding your performance shortly. Wishing you the very best in your career journey.",
       endCallPhrases: [
         "I'm done",
@@ -85,6 +85,12 @@ export const generateInterviewConfig = (interview: partialInterview) => {
         "Please end the session",
         "That’s it from my side"
       ]
+    },
+    variableValues:{
+      interviewId : interview.id,
+      userId,
+      serverNonce : crypto.randomUUID(),
+      assistantLock:null || ""
     }
   }
 }

@@ -5,7 +5,7 @@ export class CustomError extends Error {
     constructor(statusCode: number, message: string) {
         super(message);
         this.statusCode = statusCode
-        this.message = message
+        this.message = message 
         Object.setPrototypeOf(this, CustomError.prototype)
     }
 }

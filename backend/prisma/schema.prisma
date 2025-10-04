@@ -33,32 +33,45 @@ model Interview {
   jobTitle String
   additionalPrompt String?
   summary Summary?
-  vapisession VapiSession? 
+  callsession callSession? 
 
   @@index([userId,status])
 }
-model VapiSession {
+model callSession {
   id               String              @id @default(cuid())
   interviewId      String              @unique
   interview        Interview           @relation(fields: [interviewId], references: [id])
   
+  vapiCallId          String?       @unique
+  totalSecondsElapsed Int?  @default(0) 
+  lastSeenAt DateTime?
 
-  vapiCallId       String              @unique  // Vapi's call ID
-  vapiSessionUrl   String              @unique  // Join URL from Vapi
-  
-  // Session Lifecycle
-  status           VapiSessionStatus   @default(pending)
-  startedAt        DateTime?           // When call actually started
-  endedAt          DateTime?           // When call actually ended
-  recordingUrl     String?             // Recording from Vapi
+  status           CallSessionStatus   @default(pending)
+  startedAt        DateTime?           
+  endedAt          DateTime?          
   
   createdAt        DateTime            @default(now())
-  expiresAt        DateTime            // When session expires
+  expiresAt        DateTime            
   
-  @@index([vapiCallId])
   @@index([status])
 }
+model joinToken {
+  id String @id
+  interviewId String
+  userId String
+  assistantLock String
+  issuedAt DateTime
+  expiresAt DateTime
 
+  maxUses Int @default(1)
+  consumedCount Int @default(0)
+  revoked Boolean @default(false)
+  serverNonce String
+  firstConsumedCallId  String?
+
+  createdAt DateTime @default(now())
+
+}
 model Summary {
   id               String           @id @default(cuid())
   interviewId      String           @unique
@@ -77,12 +90,6 @@ model Summary {
   
   @@index([status])
 }
-enum Provider {
-  local
-  google
-  github
-  discord
-}
 enum Experience {
   fresher
   mid
@@ -96,7 +103,7 @@ enum InterviewStatus {
   active
   expired
 }
-enum VapiSessionStatus {
+enum CallSessionStatus {
   active
   failed
   pending

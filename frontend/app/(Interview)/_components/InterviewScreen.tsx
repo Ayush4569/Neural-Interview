@@ -41,7 +41,7 @@ const InterviewScreen = (
 
     vapiInstance.start({
       
-    })
+    },{})
     return () => {
       vapiInstance.stop()
     }

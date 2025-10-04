@@ -4,7 +4,7 @@ import { assistantLockHash, calculateFinalInterviewScore, canonicalizeAssistant,
 import { summary } from "../types/interview";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
-
+import crypto from 'crypto'
 export const getInterviews = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
         throw new CustomError(401, "Unauthorized")
@@ -126,14 +126,7 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
 
 
     const interview = await prisma.interview.findFirst({
-        where: { id: interviewId, userId: req.user.id, status: 'scheduled' },
-        include: {
-            vapisession: {
-                select: {
-                    vapiSessionUrl: true
-                }
-            }
-        }
+        where: { id: interviewId, userId: req.user.id, status: 'scheduled' }
     });
 
     if (!interview) {
@@ -142,14 +135,6 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
 
     if (!interview.startTime) {
         throw new CustomError(400, "Interview is not scheduled yet");
-    }
-
-    if (interview.vapisession?.vapiSessionUrl) {
-        return res.status(200).json({
-            success: true,
-            message: "Session already started",
-            sessionId: interview.vapisession?.vapiSessionUrl,
-        });
     }
 
     const now = new Date();
@@ -170,34 +155,28 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
         throw new CustomError(400, "Interview has expired");
     }
 
-    const config = generateInterviewConfig(interview)
+    const config = generateInterviewConfig(interview, req.user.id)
     const canonical = canonicalizeAssistant(config.assistant)
     const assistantLock = assistantLockHash(canonical)
-
+    config.variableValues['assistantLock'] = assistantLock
+    const jti = crypto.randomUUID()
     const token = mintVapiWebToken(
         interviewId,
         req.user.id,
         600,
         assistantLock,
-        crypto.randomUUID(),
+        jti
     );
-    await prisma.vapiSession.create({
-        data: {
-            interviewId: interview.id,
-            vapiSessionUrl: "",
-            vapiCallId: "",
-            status: 'active',
-            startedAt: now,
-            expiresAt: scheduled.getMinutes() + interview.durationMinutes.toString()
-        }
-    })
 
-    await prisma.interview.update({
-        where: {
-            id: interview.id
-        },
+    await prisma.joinToken.create({
         data: {
-            status: 'active'
+            id: jti,
+            interviewId: interview.id,
+            userId: req.user.id,
+            issuedAt: new Date(),
+            expiresAt: new Date(Date.now() + 60 * 10 * 1000),
+            assistantLock,
+            serverNonce: config.variableValues.serverNonce,
         }
     })
 
@@ -206,7 +185,33 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
         message: "Session started",
         config,
         token,
-        assistantLock
     });
 });
 
+export const vapiWebhook = async (req: Request, res: Response) => {
+    const rawBody = req.body
+    const signature = req.headers['x-vapi-signature'] as string
+    const expectedSignature = crypto.createHmac('sha256', process.env.VAPI_KEY!).update(rawBody).digest('hex')
+
+    if (expectedSignature !== signature) {
+        throw new CustomError(400, "Invalid signature")
+    }
+
+    try {
+        const event = JSON.parse(rawBody.toString());
+        const { type, status, call } = event
+        console.log('event',event);
+        const vars = call?.variables || call?.variableValues || {};
+        console.log("vars",vars);
+        const interviewId = vars.interviewId as string | undefined;
+        const userId = vars.userId as string | undefined;
+        const serverNonce = vars.serverNonce as string | undefined;
+        const assistantLockFromClient = vars.assistantLock as string | undefined;
+        const vapiCallId = call?.id as string | undefined;
+
+
+    } catch (error) {
+        console.error("Webhook  failed", error);
+        throw new CustomError(500, 'Internal server error')
+    }
+}
