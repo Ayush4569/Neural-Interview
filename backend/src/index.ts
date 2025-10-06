@@ -24,6 +24,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }))
+
+app.use('/api/interview', interviewRoutes.webhookRouter)
 app.use(express.json());
 app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }));
@@ -33,7 +35,7 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Neural Interview API is running!');
 });
 app.use("/api/user", userRoutes)
-app.use('/api/interview', interviewRoutes)
+app.use('/api/interview', interviewRoutes.router)
 
 app.use(errorHandler)
 // Start the server

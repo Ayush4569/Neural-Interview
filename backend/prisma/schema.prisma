@@ -50,8 +50,7 @@ model callSession {
   startedAt        DateTime?           
   endedAt          DateTime?          
   
-  createdAt        DateTime            @default(now())
-  expiresAt        DateTime            
+  createdAt        DateTime            @default(now())            
   
   @@index([status])
 }

@@ -1,7 +1,10 @@
-import { Router } from "express";
-import { createInterview ,getInterviews, startInterview,getInterviewById} from "../controllers/interview.controller";
+
+import { Router,raw } from "express";
+import { createInterview ,getInterviews, startInterview,getInterviewById, vapiWebhook} from "../controllers/interview.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 
+const webhookRouter = Router()
+webhookRouter.post('/webhook',raw({type:"application/json"}),vapiWebhook)
 const router = Router();
 
 router.get("/",authMiddleware,getInterviews)
@@ -9,4 +12,7 @@ router.get("/:interviewId",authMiddleware,getInterviewById)
 
 router.post("/",authMiddleware,createInterview)
 router.post("/start/:interviewId",authMiddleware,startInterview)
-export default router;
+export default {
+    router,
+    webhookRouter
+};

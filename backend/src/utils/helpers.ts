@@ -23,7 +23,7 @@ export const mintVapiWebToken = (interviewId: string, userId: string, ttLs: numb
   const payload = {
     jti,
     sub: `user:${userId}`,
-    interviewId: interviewId,
+    interviewId,
     maxUses: 1,
     aud: "web",
     iat: now,

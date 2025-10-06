@@ -200,18 +200,124 @@ export const vapiWebhook = async (req: Request, res: Response) => {
     try {
         const event = JSON.parse(rawBody.toString());
         const { type, status, call } = event
-        console.log('event',event);
+        console.log('event', event);
         const vars = call?.variables || call?.variableValues || {};
-        console.log("vars",vars);
+        console.log("vars", vars);
         const interviewId = vars.interviewId as string | undefined;
         const userId = vars.userId as string | undefined;
         const serverNonce = vars.serverNonce as string | undefined;
         const assistantLockFromClient = vars.assistantLock as string | undefined;
         const vapiCallId = call?.id as string | undefined;
 
+        if (!interviewId || !userId) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid token"
+            })
+            // end the call on frontend by emitting a ws event in future like eg socket.emit('end-call',{reason:"invalid-token"})
+        }
+        const token = await prisma.joinToken.findFirst({
+            where: {
+                interviewId,
+                userId,
+                serverNonce,
+                assistantLock: assistantLockFromClient,
+                revoked: false
+            }
+        })
+        if (type === "status-update" && status === 'in-progress' && vapiCallId) {
+            if (!token) {
+                return res.status(400).json({
+                    success: false,
+                    message: "No issued token"
+                })
+            }
+            const now = new Date()
+            if (token.expiresAt < now) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token expired, kindly recreate interview"
+                })
+            } else if (token.consumedCount >= token.maxUses) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Token already used"
+                })
+            }
+            else if (token.assistantLock !== assistantLockFromClient) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Malicious token !"
+                })
+            }
 
-    } catch (error) {
-        console.error("Webhook  failed", error);
-        throw new CustomError(500, 'Internal server error')
+            await prisma.joinToken.update({
+                where: {
+                    id: token.id
+                },
+                data: {
+                    consumedCount: { increment: 1 },
+                    firstConsumedCallId: token.firstConsumedCallId ?? vapiCallId
+                }
+            })
+
+            const existing = await prisma.callSession.findUnique({ where: { interviewId } });
+            if (!existing) {
+                await prisma.callSession.create({
+                    data: {
+                        interviewId,
+                        vapiCallId,
+                        status: 'active',
+                        startedAt: now,
+                        lastSeenAt: now,
+                    }
+                });
+            } else {
+                await prisma.callSession.update({
+                    where: { interviewId },
+                    data: {
+                        vapiCallId: existing.vapiCallId ?? vapiCallId,
+                        status: 'active',
+                        lastSeenAt: now,
+                    },
+                }); 
+            }
+        }
+        if (type === 'status-update' && status === 'in-progress') {
+            const cs = await prisma.callSession.findUnique({ where: { interviewId } });
+            if (cs?.lastSeenAt) {
+              const now = new Date();
+              const deltaSec = Math.max(0, Math.floor((now.getTime() - cs.lastSeenAt.getTime()) / 1000));
+              await prisma.callSession.update({
+                where: { interviewId },
+                data: {
+                  totalSecondsElapsed: (cs.totalSecondsElapsed ?? 0) + deltaSec,
+                  lastSeenAt: now,
+                },
+              }); 
+            }
+        }
+        if (type === 'status-update' && status === 'ended') {
+            const cs = await prisma.callSession.findUnique({ where: { interviewId } });
+            if (cs) {
+              const now = new Date();
+              const deltaSec =
+                cs.lastSeenAt ? Math.max(0, Math.floor((now.getTime() - cs.lastSeenAt.getTime()) / 1000)) : 0;
+              await prisma.callSession.update({
+                where: { interviewId },
+                data: {
+                  totalSecondsElapsed: (cs.totalSecondsElapsed ?? 0) + deltaSec,
+                  lastSeenAt: now,
+                  endedAt: now,
+                  status: 'completed',
+                },
+              }); 
+            }
+        }
+        return res.status(200).json({ success: true,message:"ok" }); 
+    }
+    catch (error) {
+    console.error("Webhook failed", error);
+    throw new CustomError(500, 'Internal server error')
     }
 }

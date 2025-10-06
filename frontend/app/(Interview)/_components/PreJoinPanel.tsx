@@ -13,8 +13,10 @@ import { toast } from 'sonner';
 import axios, { isAxiosError } from 'axios';
 
 export default function PrejoinPanel({
-  id
-}: { id: string }) {
+  id,
+  onJoined,
+  onEnded
+}: { id: string,onJoined:()=>void,onEnded:(r:string)=>void }) {
 
   const audioStreamRef = useRef<MediaStream | null>(null) // to capture audio tracks
   const analyserRef = useRef<AnalyserNode | null>(null) // gives real-time data about the audio signal (frequency, waveform, volume, etc.) 
@@ -106,16 +108,11 @@ export default function PrejoinPanel({
     }
   }
 
-  const handleJoinRoom = async()=>{
+  const handleJoinRoom = ()=>{
     try {
-      const {data} = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview/start/${id}`,null,{withCredentials:true})
-
-      if(data.success) {
-        router.replace(`/interviews/${id}/${data.sessionId}`)
-        toast.success(data.message ?? "Session started")
-      }
-
+      onJoined()
     } catch (error) {
+      onEnded(isAxiosError(error) ? error.response?.data.message : "Failed to join interview")
       console.log('Error joining room',error);
       toast.error(
         isAxiosError(error) ? error.response?.data.message : "Failed to join interview"
