@@ -112,7 +112,6 @@ export default function PrejoinPanel({
     try {
       onJoined()
     } catch (error) {
-      onEnded(isAxiosError(error) ? error.response?.data.message : "Failed to join interview")
       console.log('Error joining room',error);
       toast.error(
         isAxiosError(error) ? error.response?.data.message : "Failed to join interview"

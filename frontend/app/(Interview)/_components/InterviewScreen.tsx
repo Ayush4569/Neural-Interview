@@ -1,19 +1,24 @@
 'use client';
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
 import Image from 'next/image';
 import { useAuthContext } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
+import { useGetInterviewById } from '@/hooks/useGetInterviewByid';
+import Loading from '@/app/loading';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface JoinPayload {
   config: {
-    assistant: any;
-    variableValues: any;
+    assistant: object;
+    variableValues: object;
   };
   token: string;
 }
 
-type Bubble = { role: 'assistant' | 'user'; text: string };
+type TranscriptType = { role: 'assistant' | 'user'; text: string };
 
 const TechChip = ({ label }: { label: string }) => (
   <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/70 px-2.5 py-1 text-xs text-slate-200 ring-1 ring-slate-700">
@@ -53,16 +58,17 @@ const CardShell = ({
   highlight?: boolean;
 }) => (
   <div
-    className={[
+    className={cn(
       'flex w-full flex-col rounded-3xl p-6 sm:p-7 lg:p-8',
-      'bg-slate-900/70 ring-1 ring-slate-800',
+      'bg-slate-900/70 ring-1 ring-slate-800 min-h-[360px]',
       highlight ? 'outline-2 outline-indigo-700/50' : '',
-    ].join(' ')}
-    style={{ minHeight: 360 }}
+    )}
   >
     <div className="flex-1">{children}</div>
     <div className="mt-4">
-      <div className="text-lg font-semibold text-slate-100">{title}</div>
+      <div className="text-lg font-semibold text-slate-100">
+      {title}
+      </div>
       {subtitle ? <div className="text-sm text-slate-400">{subtitle}</div> : null}
     </div>
   </div>
@@ -75,20 +81,21 @@ const PromptBar = ({ text }: { text: string }) => (
 );
 
 export default function InterviewScreen({ interviewId }: { interviewId: string }) {
+  const router = useRouter()
   const vapiRef = useRef<Vapi | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [transcript, setTranscript] = useState<Bubble[]>([]);
+  const [transcript, setTranscript] = useState<TranscriptType[]>([]);
   const [joinPayload, setJoinPayload] = useState<JoinPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuthContext()
-
+  const { data: interview, isPending, isError, error:interviewError } = useGetInterviewById({id:interviewId})
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/interviews/start/${interviewId}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/interview/start/${interviewId}`,
           null,
           { withCredentials: true }
         );
@@ -97,7 +104,12 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
           else setJoinPayload(data as JoinPayload);
         }
       } catch (e) {
-        if (!cancelled) setError('Failed to prepare interview');
+        console.log('error starting call', error);
+        const isaxiosError = isAxiosError(e)
+        toast.error(
+          isaxiosError ? e.response?.data.message : "Failed to join interview"
+        )
+        if (!cancelled) setError(isaxiosError ? e.response?.data.message : "Failed to join interview");
       }
     })();
     return () => {
@@ -114,38 +126,52 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
     vapi.on('call-end', () => setIsConnected(false));
     vapi.on('speech-start', () => setIsSpeaking(true));
     vapi.on('speech-end', () => setIsSpeaking(false));
-    vapi.on('message', (m: any) => {
-      // Expect { role, text }
-      if (m?.text) {
-        const role = m.role === 'assistant' ? 'assistant' : 'user';
-        setTranscript((prev) => [...prev, { role, text: m.text }]);
+    vapi.on('message', (message) => {
+      if (message.type === 'transcript') {
+        const { role, text } = message
+        setTranscript((prev) => [...prev, { role, text }]);
       }
     });
-    vapi.on('error', (e: any) => console.error('Vapi error', e));
+    vapi.on('error', (err) => console.error('Vapi error', err));
 
     vapi
       .start(joinPayload.config.assistant, { variableValues: joinPayload.config.variableValues })
       .catch((e) => setError(e?.message || 'Failed to start call'));
 
     return () => {
-      vapi.stop().catch(() => undefined);
+      vapi.stop()
     };
   }, [joinPayload]);
 
   const lastAssistantLine =
-    [...transcript].reverse().find((t) => t.role === 'assistant')?.text ??
-    'What job experience level are you targeting?';
+    [...transcript].reverse().find((t) => t.role === 'assistant')?.text ?? '';
 
+  const handleDisconnect = () => {
+    if (!vapiRef.current) return;
+    vapiRef.current.stop()
+    router.back()
+  }
+  if (isPending) {
+    return <Loading />
+  }
+  else if (isError || !interview) {
+    router.back()
+    toast.error(interviewError.message || "Error loading screen")
+    return null
+  }
   return (
     <div className="min-h-screen w-full bg-[#0B0D12] text-slate-100">
 
       {/* Title row */}
       <section className="mx-auto w-full max-w-6xl px-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold text-slate-100">Frontend Developer Interview</h1>
+          <h1 className="text-xl font-semibold text-slate-100">{interview.jobTitle.toLocaleUpperCase()} Interview</h1>
           <div className="flex items-center gap-2">
-            <TechChip label="React" />
-            <TechChip label="Next.js" />
+            {
+              interview.techStack.split(',').map((t)=>{
+                return <TechChip label={t} key={t}/>
+              })
+            }
           </div>
         </div>
       </section>
@@ -157,53 +183,53 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
           <CardShell title="AI Interviewer" subtitle={isConnected ? (isSpeaking ? 'Listening…' : 'Connected') : 'Connecting…'} highlight>
 
             <div className="flex h-56 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-800/60 to-slate-900/60 ring-1 ring-slate-800">
+            <div className="flex h-56 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-800/60 to-slate-900/60 ring-1 ring-slate-800">
+             
               <Image
                 alt='ai-cover'
                 src='/ai-avatar.png'
                 priority
-                fill
+                width={70}
+                height={70}
+                className='bg-white rounded-2xl'
               />
-              <div className="h-24 w-24 rounded-2xl bg-slate-700" />
+            </div>
             </div>
           </CardShell>
 
 
-          <CardShell title="Adrian (You)" subtitle="Microphone active">
+          <CardShell title={`${user?.username.toUpperCase()} (You)`} subtitle="Microphone active">
 
             <div className="flex h-56 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-800/60 to-slate-900/60 ring-1 ring-slate-800">
-              <Image
-                alt='user-cover'
+            <Image
                 src={user?.avatarUrl || '/user-avatar.png'}
-                priority
-                fill
+                alt='User Avatar'
+                height={66}
+                width={66}
+                style={{ height: 66, width: 66 }}
+                className='object-cover rounded-full'
               />
-              <div className="h-24 w-24 rounded-full bg-slate-700" />
             </div>
           </CardShell>
         </div>
 
-        {/* Prompt / transcript bar */}
+        {/* transcript bar */}
         <div className="mt-6">
           <PromptBar text={lastAssistantLine} />
         </div>
 
-        {/* Bottom controls */}
+        
         <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-          {/* <ControlButton variant="ghost" onClick={() => vapiRef.current.()}>
-            ⟳ Repeat
-          </ControlButton> */}
+
           <ControlButton
             variant="danger"
-            onClick={() => {
-              vapiRef.current?.stop?.();
-              // navigate or lift state as needed
-            }}
+            onClick={handleDisconnect}
           >
-            ✂ Leave interview
+            Leave interview
           </ControlButton>
         </div>
 
-        {/* Error surface */}
+        
         {error ? (
           <div className="mt-6 rounded-xl bg-rose-500/10 px-4 py-3 text-rose-300 ring-1 ring-rose-500/30">
             {error}

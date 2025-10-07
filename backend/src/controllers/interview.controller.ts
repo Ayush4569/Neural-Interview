@@ -1,10 +1,11 @@
 import { Response, Request } from "express";
 import { prisma } from "../database/db";
-import { assistantLockHash, calculateFinalInterviewScore, canonicalizeAssistant, generateInterviewConfig, mintVapiWebToken } from "../utils/helpers";
+import { assistantLockHash, calculateFinalInterviewScore, canonicalizeAssistant, generateInterviewConfig, mintVapiWebToken, normalizeTechStack } from "../utils/helpers";
 import { summary } from "../types/interview";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
 import crypto from 'crypto'
+
 export const getInterviews = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
         throw new CustomError(401, "Unauthorized")
@@ -30,6 +31,9 @@ export const getInterviews = asyncHandler(async (req: Request, res: Response) =>
             additionalPrompt: true
         }
     });
+
+    console.log('in',interviews);
+    
 
     if (interviews.length === 0) {
         res.status(200).json({ message: "No interviews found", success: true });
@@ -102,7 +106,7 @@ export const createInterview = asyncHandler(async (req: Request, res: Response) 
         await prisma.interview.create({
             data: {
                 jobTitle,
-                techStack,
+                techStack: normalizeTechStack(techStack),
                 expLevel: experienceLevel,
                 durationMinutes: callDuration,
                 startTime: scheduledDate,

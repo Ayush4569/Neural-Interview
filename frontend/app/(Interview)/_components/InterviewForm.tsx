@@ -41,6 +41,7 @@ import { DURATION_OPTIONS, EXPERIENCE_LEVELS } from "@/constants/index";
 import { toast } from 'sonner';
 import { DialogDescription } from '@radix-ui/react-dialog';
 import { interviewFormSchema } from '@/schemas';
+import { useAuthContext } from '@/context/AuthContext';
 
 
 type FormData = z.infer<typeof interviewFormSchema>;
@@ -57,6 +58,7 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
     const [selectedTime, setSelectedTime] = useState<TimeState>(DEFAULT_TIME);
+    const { status } = useAuthContext()
     const isPaidUser = false;
     const formConfig = useMemo(() => ({
         resolver: zodResolver(interviewFormSchema),
@@ -93,6 +95,11 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
 
     const handleSubmit = useCallback(async (data: FormData) => {
         if (isSubmitting) return;
+        else if (status === 'unauthenticated') {
+            toast.error("Login to create interview!")
+            setIsOpen(false)
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -102,6 +109,7 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                 combinedDateTime.setMinutes(parseInt(selectedTime.minute));
                 data.scheduledDate = combinedDateTime;
             }
+
             const { data: axiosData } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview`, data, {
                 withCredentials: true
             })
@@ -332,7 +340,7 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                                                     mode="single"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
-                                                    disabled={(date) => date < new Date()}
+                                                    // disabled={(date) => date < new Date()}
                                                     autoFocus
                                                     className="text-[color:var(--text)]"
                                                 />

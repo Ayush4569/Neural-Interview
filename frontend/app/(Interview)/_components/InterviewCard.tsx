@@ -77,7 +77,7 @@ const InterviewCard = ({ interview, isPast }: { interview: Interview; isPast: bo
           )}
         </div>
         <Button size="sm" asChild className="h-7 px-3 text-xs">
-          <Link href={isPast ? `/interviews/${interview.id}/report` : `/interviews/${interview.id}/preview`}
+          <Link href={isPast ? `/interviews/${interview.id}/report` : `/interviews/${interview.id}`}
             style={{
               background: isPast ? 'var(--indigo)' : 'linear-gradient(135deg, var(--indigo), var(--coral))',
               color: '#0E1116'

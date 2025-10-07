@@ -4,11 +4,19 @@ import crypto from 'crypto'
 import { summary } from "../types/interview";
 import { Interview } from "types/interview";
 import jwt from "jsonwebtoken";
-type partialInterview = Pick<Interview, 'id'|'jobTitle' | 'techStack' | 'additionalPrompt' | 'durationMinutes' | 'expLevel'>
+type partialInterview = Pick<Interview, 'id' | 'jobTitle' | 'techStack' | 'additionalPrompt' | 'durationMinutes' | 'expLevel'>
 
 
 export const hashPassword = async (password: string): Promise<string> => await bcrypt.hash(password, 10);
 
+export function normalizeTechStack(input: string): string {
+  return input
+    .replace(/,/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(stack => stack.trim())
+    .join(',');
+}
 
 export const canonicalizeAssistant = (assitantConfig: object): string => {
   return JSON.stringify(assitantConfig, Object.keys(assitantConfig).sort())
@@ -18,7 +26,7 @@ export const assistantLockHash = (input: string): string => {
   return crypto.createHash("sha256").update(input).digest("hex")
 }
 
-export const mintVapiWebToken = (interviewId: string, userId: string, ttLs: number=600, assistantLockHash: string, jti: string) => {
+export const mintVapiWebToken = (interviewId: string, userId: string, ttLs: number = 600, assistantLockHash: string, jti: string) => {
   const now = Math.floor(Date.now() / 1000)
   const payload = {
     jti,
@@ -27,16 +35,18 @@ export const mintVapiWebToken = (interviewId: string, userId: string, ttLs: numb
     maxUses: 1,
     aud: "web",
     iat: now,
-    expiry: now+ttLs,
-    assistantLockHash 
+    exp: now + ttLs,
+    orgId: process.env.VAPI_ORG_ID!,
+    assistantLockHash,
+    token: { tag: 'public' }
   }
 
   return jwt.sign(payload, process.env.VAPI_KEY!, { algorithm: "HS256" })
 }
-export const generateInterviewConfig = (interview: partialInterview,userId:string) => {
+export const generateInterviewConfig = (interview: partialInterview, userId: string) => {
   return {
     assistant: {
-      name: `${interview.jobTitle} Interview Assistant`,
+      name: `Interview Assistant`,
       model: {
         provider: 'deep-seek',
         model: 'deepseek-chat',
@@ -86,11 +96,11 @@ export const generateInterviewConfig = (interview: partialInterview,userId:strin
         "That’s it from my side"
       ]
     },
-    variableValues:{
-      interviewId : interview.id,
+    variableValues: {
+      interviewId: interview.id,
       userId,
-      serverNonce : crypto.randomUUID(),
-      assistantLock:null || ""
+      serverNonce: crypto.randomUUID(),
+      assistantLock: null || ""
     }
   }
 }

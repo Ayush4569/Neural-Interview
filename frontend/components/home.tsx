@@ -1,4 +1,4 @@
-'use client'
+
 import React from 'react'
 import Bar from "@/components/Bar";
 import topColor from "@/components/TopColor";
@@ -29,7 +29,6 @@ const Home = () => {
 
                 <CreateInterviewModal>
                     <button
-
                         className="rounded-lg mt-4 px-4 py-2.5 sm:px-5 sm:py-3 font-semibold text-shadow-300 cursor-pointer hover:scale-110 transition-transform duration-300 ease-in-out"
                         style={{ background: "linear-gradient(135deg, var(--indigo), var(--coral))" }}
                     >

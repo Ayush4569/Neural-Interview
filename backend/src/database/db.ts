@@ -7,6 +7,7 @@ export const connectDB = () =>{
                 resolve(true);
             })
             .catch((error: Error ) => {
+                process.exit(1)
                 reject(error);
             });
     })
