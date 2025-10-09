@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import Loading from '@/app/loading';
 import { toast } from 'sonner';
 import axios, { isAxiosError } from 'axios';
+import { da } from 'date-fns/locale';
 
 export default function PrejoinPanel({
   id,
@@ -108,13 +109,25 @@ export default function PrejoinPanel({
     }
   }
 
-  const handleJoinRoom = ()=>{
+  const handleJoinRoom = async()=>{
     try {
-      onJoined()
-    } catch (error) {
-      console.log('Error joining room',error);
+      const { data } = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/interview/start/${id}`,
+        null,
+        { withCredentials: true }
+      );
+      if(data.success){
+        toast.success("Interview started. Joining room...")
+        sessionStorage.setItem(`join:${id}`, JSON.stringify({
+          ...data
+        }))
+        onJoined()
+      }
+    } catch (e) {
+      console.log('error joining call', e);
+      const isaxiosError = isAxiosError(e)
       toast.error(
-        isAxiosError(error) ? error.response?.data.message : "Failed to join interview"
+        isaxiosError ? e.response?.data.message : "Failed to join interview"
       )
     }
   }

@@ -27,7 +27,7 @@ const InterviewCard = ({ interview, isPast }: { interview: Interview; isPast: bo
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-[color:var(--text)]">
-              {new Date(interview.startTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {new Date(interview.startTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
 
             </p>
             <div className="flex items-center gap-1 text-xs text-[color:var(--text-dim)] mt-1">

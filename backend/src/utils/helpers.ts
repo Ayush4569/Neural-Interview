@@ -6,7 +6,7 @@ import { Interview } from "types/interview";
 import jwt from "jsonwebtoken";
 type partialInterview = Pick<Interview, 'id' | 'jobTitle' | 'techStack' | 'additionalPrompt' | 'durationMinutes' | 'expLevel'>
 
-
+// Focus on core nodejs principles
 export const hashPassword = async (password: string): Promise<string> => await bcrypt.hash(password, 10);
 
 export function normalizeTechStack(input: string): string {
@@ -48,8 +48,8 @@ export const generateInterviewConfig = (interview: partialInterview, userId: str
     assistant: {
       name: `Interview Assistant`,
       model: {
-        provider: 'deep-seek',
-        model: 'deepseek-chat',
+        provider: 'openai',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',

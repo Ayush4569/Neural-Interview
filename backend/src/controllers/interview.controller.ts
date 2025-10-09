@@ -31,8 +31,6 @@ export const getInterviews = asyncHandler(async (req: Request, res: Response) =>
             additionalPrompt: true
         }
     });
-
-    console.log('in',interviews);
     
 
     if (interviews.length === 0) {
@@ -134,7 +132,7 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
     });
 
     if (!interview) {
-        throw new CustomError(404, "No such interview");
+        throw new CustomError(404, "Interview not found");
     }
 
     if (!interview.startTime) {
@@ -158,7 +156,10 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
         });
         throw new CustomError(400, "Interview has expired");
     }
-
+    const active = await prisma.callSession.findFirst({
+        where: { interviewId: interview.id, status: 'active' },
+      });
+      if (active) throw new CustomError(409, 'ALREADY IN PROGRESS');
     const config = generateInterviewConfig(interview, req.user.id)
     const canonical = canonicalizeAssistant(config.assistant)
     const assistantLock = assistantLockHash(canonical)

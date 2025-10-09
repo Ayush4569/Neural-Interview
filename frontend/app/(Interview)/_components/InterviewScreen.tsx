@@ -1,5 +1,4 @@
 'use client';
-import axios, { isAxiosError } from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
 import Image from 'next/image';
@@ -18,7 +17,7 @@ interface JoinPayload {
   token: string;
 }
 
-type TranscriptType = { role: 'assistant' | 'user'; text: string };
+type TranscriptType = { role: any; content: string };
 
 const TechChip = ({ label }: { label: string }) => (
   <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/70 px-2.5 py-1 text-xs text-slate-200 ring-1 ring-slate-700">
@@ -90,46 +89,42 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuthContext()
   const { data: interview, isPending, isError, error:interviewError } = useGetInterviewById({id:interviewId})
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/interview/start/${interviewId}`,
-          null,
-          { withCredentials: true }
-        );
-        if (!cancelled) {
-          if (!data?.success) setError('Failed to prepare interview');
-          else setJoinPayload(data as JoinPayload);
-        }
-      } catch (e) {
-        console.log('error starting call', error);
-        const isaxiosError = isAxiosError(e)
-        toast.error(
-          isaxiosError ? e.response?.data.message : "Failed to join interview"
-        )
-        if (!cancelled) setError(isaxiosError ? e.response?.data.message : "Failed to join interview");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [interviewId]);
+
 
   useEffect(() => {
-    if (!joinPayload?.token) return;
+    const raw = sessionStorage.getItem(`join:${interviewId}`);
+    if (!raw) {
+      router.back()
+      toast.error("No interview session found")
+      return;
+    }
+    try {
+      const payload = JSON.parse(raw);
+      setJoinPayload(payload);
+    } catch (e) {
+      router.back()
+      toast.error("Invalid interview session data")
+    }
+    if (!joinPayload?.token) {
+      router.back()
+      toast.error("No interview session found")
+      return;
+    } ;
     const vapi = new Vapi(joinPayload.token);
     vapiRef.current = vapi;
 
-    vapi.on('call-start', () => setIsConnected(true));
+    vapi.on('call-start', () => {
+      sessionStorage.removeItem(`join:${interviewId}`);
+      setIsConnected(true)
+    });
     vapi.on('call-end', () => setIsConnected(false));
     vapi.on('speech-start', () => setIsSpeaking(true));
     vapi.on('speech-end', () => setIsSpeaking(false));
-    vapi.on('message', (message) => {
+    vapi.on('message', (message:Message) => {
+      console.log('Vapi message', message);
       if (message.type === 'transcript') {
-        const { role, text } = message
-        setTranscript((prev) => [...prev, { role, text }]);
+        const newMessage = { role: message.role, content: message.transcript };
+        setTranscript((prev) => [...prev, newMessage]);
       }
     });
     vapi.on('error', (err) => console.error('Vapi error', err));
@@ -144,7 +139,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
   }, [joinPayload]);
 
   const lastAssistantLine =
-    [...transcript].reverse().find((t) => t.role === 'assistant')?.text ?? '';
+    [...transcript].reverse().find((t) => t.role === 'bot')?.content ?? '';
 
   const handleDisconnect = () => {
     if (!vapiRef.current) return;

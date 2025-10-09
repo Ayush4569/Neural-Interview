@@ -4,7 +4,7 @@ import React, { useState, useCallback, useMemo, memo } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import {
     Dialog,
     DialogContent,
@@ -109,7 +109,11 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                 combinedDateTime.setMinutes(parseInt(selectedTime.minute));
                 data.scheduledDate = combinedDateTime;
             }
-
+            if(data.schedule === 'future' && !data.scheduledDate) {
+                toast.error("Please select a valid date and time for scheduling the interview.");
+                setIsSubmitting(false);
+                return;
+            }
             const { data: axiosData } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview`, data, {
                 withCredentials: true
             })
@@ -120,7 +124,9 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
             }
         } catch (error) {
             console.error('Error creating interview:', error);
-            toast.error("Failed to create interview. Please try again.");
+            toast.error(
+                isAxiosError(error) ? error.response?.data.message : "Failed to create interview. Please try again."
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -340,7 +346,7 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                                                     mode="single"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
-                                                    // disabled={(date) => date < new Date()}
+                                                    disabled={(date) => date >= new Date() || date < new Date(new Date().setHours(0, 0, 0, 0))}
                                                     autoFocus
                                                     className="text-[color:var(--text)]"
                                                 />
