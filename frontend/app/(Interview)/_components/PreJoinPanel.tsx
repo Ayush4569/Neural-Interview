@@ -121,7 +121,9 @@ export default function PrejoinPanel({
         sessionStorage.setItem(`join:${id}`, JSON.stringify({
           ...data
         }))
-        onJoined()
+        setTimeout(() => {
+          onJoined()
+        }, 1000);
       }
     } catch (e) {
       console.log('error joining call', e);

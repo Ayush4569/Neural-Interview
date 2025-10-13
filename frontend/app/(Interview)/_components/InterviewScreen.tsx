@@ -17,7 +17,7 @@ interface JoinPayload {
   token: string;
 }
 
-type TranscriptType = { role: any; content: string };
+type TranscriptType = { role: "user" | "system" | "assistant"; content: string };
 
 const TechChip = ({ label }: { label: string }) => (
   <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/70 px-2.5 py-1 text-xs text-slate-200 ring-1 ring-slate-700">
@@ -66,7 +66,7 @@ const CardShell = ({
     <div className="flex-1">{children}</div>
     <div className="mt-4">
       <div className="text-lg font-semibold text-slate-100">
-      {title}
+        {title}
       </div>
       {subtitle ? <div className="text-sm text-slate-400">{subtitle}</div> : null}
     </div>
@@ -88,7 +88,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
   const [joinPayload, setJoinPayload] = useState<JoinPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuthContext()
-  const { data: interview, isPending, isError, error:interviewError } = useGetInterviewById({id:interviewId})
+  const { data: interview, isPending, isError, error: interviewError } = useGetInterviewById({ id: interviewId })
 
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
       router.back()
       toast.error("No interview session found")
       return;
-    } ;
+    };
     const vapi = new Vapi(joinPayload.token);
     vapiRef.current = vapi;
 
@@ -120,7 +120,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
     vapi.on('call-end', () => setIsConnected(false));
     vapi.on('speech-start', () => setIsSpeaking(true));
     vapi.on('speech-end', () => setIsSpeaking(false));
-    vapi.on('message', (message:Message) => {
+    vapi.on('message', (message: Message) => {
       console.log('Vapi message', message);
       if (message.type === 'transcript') {
         const newMessage = { role: message.role, content: message.transcript };
@@ -139,7 +139,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
   }, [joinPayload]);
 
   const lastAssistantLine =
-    [...transcript].reverse().find((t) => t.role === 'bot')?.content ?? '';
+    [...transcript].reverse().find((t) => t.role === 'assistant')?.content ?? '';
 
   const handleDisconnect = () => {
     if (!vapiRef.current) return;
@@ -163,8 +163,8 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
           <h1 className="text-xl font-semibold text-slate-100">{interview.jobTitle.toLocaleUpperCase()} Interview</h1>
           <div className="flex items-center gap-2">
             {
-              interview.techStack.split(',').map((t)=>{
-                return <TechChip label={t} key={t}/>
+              interview.techStack.split(',').map((t) => {
+                return <TechChip label={t} key={t} />
               })
             }
           </div>
@@ -178,17 +178,17 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
           <CardShell title="AI Interviewer" subtitle={isConnected ? (isSpeaking ? 'Listening…' : 'Connected') : 'Connecting…'} highlight>
 
             <div className="flex h-56 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-800/60 to-slate-900/60 ring-1 ring-slate-800">
-            <div className="flex h-56 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-800/60 to-slate-900/60 ring-1 ring-slate-800">
-             
-              <Image
-                alt='ai-cover'
-                src='/ai-avatar.png'
-                priority
-                width={70}
-                height={70}
-                className='bg-white rounded-2xl'
-              />
-            </div>
+              <div className="flex h-56 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-800/60 to-slate-900/60 ring-1 ring-slate-800">
+
+                <Image
+                  alt='ai-cover'
+                  src='/ai-avatar.png'
+                  priority
+                  width={70}
+                  height={70}
+                  className='bg-white rounded-2xl'
+                />
+              </div>
             </div>
           </CardShell>
 
@@ -196,7 +196,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
           <CardShell title={`${user?.username.toUpperCase()} (You)`} subtitle="Microphone active">
 
             <div className="flex h-56 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-800/60 to-slate-900/60 ring-1 ring-slate-800">
-            <Image
+              <Image
                 src={user?.avatarUrl || '/user-avatar.png'}
                 alt='User Avatar'
                 height={66}
@@ -213,7 +213,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
           <PromptBar text={lastAssistantLine} />
         </div>
 
-        
+
         <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
 
           <ControlButton
@@ -224,7 +224,7 @@ export default function InterviewScreen({ interviewId }: { interviewId: string }
           </ControlButton>
         </div>
 
-        
+
         {error ? (
           <div className="mt-6 rounded-xl bg-rose-500/10 px-4 py-3 text-rose-300 ring-1 ring-rose-500/30">
             {error}

@@ -100,14 +100,14 @@ export const createInterview = asyncHandler(async (req: Request, res: Response) 
             throw new CustomError(400, "Scheduled date is required for later interviews")
         }
         const interviewStartTime = new Date(scheduledDate)
-        const interviewEndTime = new Date(interviewStartTime.getTime() + 7 * 60 * 1000) // 
+        const interviewEndTime = new Date(interviewStartTime.getTime() + callDuration * 60 * 1000 +  7 * 60 * 1000)
         await prisma.interview.create({
             data: {
                 jobTitle,
                 techStack: normalizeTechStack(techStack),
                 expLevel: experienceLevel,
                 durationMinutes: callDuration,
-                startTime: scheduledDate,
+                startTime: interviewStartTime,
                 endTime: interviewEndTime,
                 additionalPrompt,
                 status: 'scheduled',

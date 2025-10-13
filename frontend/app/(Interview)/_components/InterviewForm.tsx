@@ -42,6 +42,7 @@ import { toast } from 'sonner';
 import { DialogDescription } from '@radix-ui/react-dialog';
 import { interviewFormSchema } from '@/schemas';
 import { useAuthContext } from '@/context/AuthContext';
+import { queryClient } from '@/lib/tanstack';
 
 
 type FormData = z.infer<typeof interviewFormSchema>;
@@ -51,7 +52,7 @@ interface CreateInterviewModalProps {
 }
 const DEFAULT_TIME: TimeState = { hour: "09", minute: "00" };
 
-export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
+export const CreateInterviewModal: React.FC<CreateInterviewModalProps> = memo(({
     children,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +86,7 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
 
     const handleTimeChange = useCallback((time: TimeState) => {
         setSelectedTime(time);
-    }, []);
+    }, [])
 
     const resetForm = useCallback(() => {
         form.reset();
@@ -109,16 +110,20 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                 combinedDateTime.setMinutes(parseInt(selectedTime.minute));
                 data.scheduledDate = combinedDateTime;
             }
-            if(data.schedule === 'future' && !data.scheduledDate) {
+            if (data.schedule === 'future' && !data.scheduledDate) {
                 toast.error("Please select a valid date and time for scheduling the interview.");
                 setIsSubmitting(false);
                 return;
             }
+            
+            
             const { data: axiosData } = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interview`, data, {
                 withCredentials: true
             })
             if (axiosData.success) {
+                console.log('form submitted with data', data);
                 setIsOpen(false);
+                queryClient.invalidateQueries({ queryKey: ['interviews'] });
                 resetForm();
                 toast.success(axiosData.message || "Interview created")
             }
@@ -130,14 +135,17 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
         } finally {
             setIsSubmitting(false);
         }
+        
+        
     }, [isSubmitting, selectedTime, resetForm]);
 
     const buttonText = useMemo(() => {
         const selectedDate = form.watch('scheduledDate');
+
         return selectedDate ?
             `${format(selectedDate, "PPP")} at ${selectedTime.hour}:${selectedTime.minute}` :
             "Pick a date & time";
-    }, [form, selectedTime.hour, selectedTime.minute]);
+    }, [selectedTime.hour, selectedTime.minute, form]);
 
     const availableDurations = useMemo(() =>
         isPaidUser ? DURATION_OPTIONS : DURATION_OPTIONS.filter(option => option.free),
@@ -344,10 +352,13 @@ export const CreateInterviewModal = memo<CreateInterviewModalProps>(({
                                             <PopoverContent className="w-auto p-0 border-[color:var(--border)] bg-[color:var(--surface)]" align="start">
                                                 <Calendar
                                                     mode="single"
+
                                                     selected={field.value}
                                                     onSelect={field.onChange}
-                                                    disabled={(date) => date >= new Date() || date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                                    autoFocus
+                                                    disabled={(date) => {
+                                                        return date.toDateString() !== new Date().toDateString()
+                                                    }}
+
                                                     className="text-[color:var(--text)]"
                                                 />
                                                 <TimeSelector

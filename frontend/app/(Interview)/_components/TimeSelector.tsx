@@ -1,6 +1,6 @@
 'use client';
 
-import React, {  useCallback, memo } from 'react';
+import React, { useCallback, memo, useEffect } from 'react';
 import {
     Select,
     SelectContent,
@@ -8,25 +8,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import type {TimeState} from "@/types/globalTypes";
+import type { TimeState } from "@/types/globalTypes";
 
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-export const TimeSelector = memo(({ 
-    selectedTime, 
-    onTimeChange 
-}: { 
-    selectedTime: TimeState; 
-    onTimeChange: (time: TimeState) => void; 
+export const TimeSelector = memo(({
+    selectedTime,
+    onTimeChange
+}: {
+    selectedTime: TimeState;
+    onTimeChange: (time: TimeState) => void;
 }) => {
     const handleHourChange = useCallback((hour: string) => {
-        onTimeChange({ ...selectedTime, hour });
-    }, [selectedTime, onTimeChange]);
+
+        onTimeChange({ minute: selectedTime.minute, hour });
+    },[selectedTime, onTimeChange]);
 
     const handleMinuteChange = useCallback((minute: string) => {
-        onTimeChange({ ...selectedTime, minute });
-    }, [selectedTime, onTimeChange]);
+
+        onTimeChange({ hour: selectedTime.hour, minute });
+    },[selectedTime, onTimeChange]);
+
 
     return (
         <div className="border-t border-[color:var(--border)] p-3">
