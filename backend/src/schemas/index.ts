@@ -15,3 +15,14 @@ export const signupSchema = z.object({
     avatarUrl: z.instanceof(File).optional()
 })
 
+export const createInterviewSchema = z.object({
+    jobTitle: z.string().min(2, { message: "Title must be at least 2 characters" }).max(50, { message: "Title must be less than 50 characters" }),
+    techStack: z.string().max(100, { message: "Tech stack must be less than 100 characters" }),
+    experienceLevel : z.enum(["fresher", "junior", "mid", "senior", "lead"]),
+    callDuration:z.int().min(1,{message:"Duration must be at least 1 minute"}).max(60,{message:"Duration must be less than 60 minutes"}),
+    additionalPrompt: z.string().max(100, { message: "Prompt must be less than 100 characters" }).optional(),
+    scheduledDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+        message: "Invalid date format"
+    }),
+})
+

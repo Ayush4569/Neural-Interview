@@ -5,6 +5,7 @@ import { summary } from "../types/interview";
 import { asyncHandler } from "../utils/asyncHandler";
 import { CustomError } from "../utils/apiError";
 import crypto from 'crypto'
+import { createInterviewSchema } from "../schemas";
 
 export const getInterviews = asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || !req.user.id) {
@@ -39,7 +40,12 @@ export const getInterviews = asyncHandler(async (req: Request, res: Response) =>
     }
     const interviewsWithAdditionalData = await Promise.all(
         interviews.map(async (i) => {
-            const type: 'past' | 'upcoming' = i.startTime! > now ? 'upcoming' : 'past'
+            let type: 'past' | 'upcoming';
+            if (i.endTime && i.endTime < now) {
+                type = 'past'
+            } else {
+                type = 'upcoming'
+            }
 
             let score: number | null = null
             if (i.status === 'completed' && i.summary) {
@@ -89,16 +95,17 @@ export const createInterview = asyncHandler(async (req: Request, res: Response) 
         throw new CustomError(401, "Unauthorized")
     }
     const { jobTitle, techStack, experienceLevel, callDuration, additionalPrompt, schedule, scheduledDate } = req.body;
-    if ([jobTitle, techStack, experienceLevel, callDuration, schedule].some(field => !field)) {
-        throw new CustomError(400, "All fields are required")
+    const parseResult = await createInterviewSchema.safeParseAsync(req.body);
+    if (!parseResult.success) {
+        const formatted = parseResult.error.format()
+        const message = Object.values(formatted).map((err: any) => err?._errors).flat().filter(Boolean).join(", ")
+        throw new CustomError(400, message || "Invalid input")
     }
+
     if (schedule === 'now') {
         // Logic to schedule the interview immediately
         console.log("Scheduling interview now");
     } else {
-        if (!scheduledDate) {
-            throw new CustomError(400, "Scheduled date is required for later interviews")
-        }
         const interviewStartTime = new Date(scheduledDate)
         const interviewEndTime = new Date(interviewStartTime.getTime() + callDuration * 60 * 1000 +  7 * 60 * 1000)
         await prisma.interview.create({
@@ -126,9 +133,8 @@ export const startInterview = asyncHandler(async (req: Request, res: Response) =
 
     const { interviewId } = req.params;
 
-
     const interview = await prisma.interview.findFirst({
-        where: { id: interviewId, userId: req.user.id, status: 'scheduled' }
+        where: { id: interviewId, userId: req.user.id}
     });
 
     if (!interview) {
