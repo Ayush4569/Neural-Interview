@@ -100,7 +100,7 @@ export const generateInterviewConfig = (interview: partialInterview, userId: str
       interviewId: interview.id,
       userId,
       serverNonce: crypto.randomUUID(),
-      assistantLock: null || ""
+      assistantLock:  ""
     }
   }
 }
