@@ -1,44 +1,47 @@
-import express, { Request, Response } from 'express';
+import express, { type Application, type Request, type Response } from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import connectDB from './config/db.js';
+import authRoutes from './routes/authRoutes.js';
+import interviewRoutes from './routes/interviewRoutes.js';
+import { initCleanupJob } from './workers/cleanupJob.js';
+import errorHandler from './middleware/errorMiddleware.js';
+
 import cookieParser from 'cookie-parser';
-import { config } from './env'
-import { connectDB } from './database/db';
-import interviewRoutes from './routes/interview.routes';
-import userRoutes from './routes/user.routes';
-import { errorHandler } from './utils/apiError';
-const app = express();
 
-connectDB()
-  .then(() => {
-    console.log("Database connected successfully");
-  })
-  .catch((error: Error) => {
-    console.error(error.message || "Database connection failed");
-    process.exit(1);
-  });
+// Load env vars
+dotenv.config({path:'./.env'});
 
-// Middleware to parse JSON
-app.use(cors({
-  origin: ['http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-}))
+// Connect to database
+connectDB();
 
-app.use('/api/interview', interviewRoutes.webhookRouter)
+// Init Background Jobs
+initCleanupJob();
+
+const app: Application = express();
+
+// Middleware
 app.use(express.json());
-app.use(cookieParser())
-app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 
-// Basic route
+// Routes
+app.use('/api/v1/user', authRoutes);
+app.use('/api/v1/interviews', interviewRoutes);
+
+// Error Handler
+app.use(errorHandler);
+
+// Basic Route
 app.get('/', (req: Request, res: Response) => {
-  res.send('Neural Interview API is running!');
+  res.json({ message: 'AI Interviewer is running...' });
 });
-app.use("/api/user", userRoutes)
-app.use('/api/interview', interviewRoutes.router)
 
-app.use(errorHandler)
-// Start the server
-app.listen(config.PORT, () => {
-  console.log(`Server is running on http://localhost:${config.PORT}`);
+const PORT = process.env.PORT || 8000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

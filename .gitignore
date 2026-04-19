@@ -1,13 +1,23 @@
-# macOS
-.DS_Store
-*.DS_Store
-
-# Node modules
-*node_modules
-
-# Logs
-*.log
+# Node
+node_modules/
+npm-debug.log
+yarn.lock
 
 # Env files
-*.env
-*test.js
+.env
+.env.local
+
+# Build
+dist/
+build/
+.next/
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode/

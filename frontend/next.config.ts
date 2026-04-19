@@ -1,25 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images: {
-   remotePatterns: [
-     {
-       protocol: 'https',
-       hostname: 'lh3.googleusercontent.com',
-       port: '',
-       pathname: '/**',
-     },
-     {
-       protocol: 'https',
-       hostname: 'res.cloudinary.com',
-       port: '',
-       pathname: '/**',
-     },
-   ],
+  turbopack: {
+    root: '/Users/apple/Desktop/Web development/Full stack projects/Antigravity/frontend',
   },
- compiler:{
-   removeConsole: process.env.NODE_ENV === "production",
- }
 };
 
 export default nextConfig;
