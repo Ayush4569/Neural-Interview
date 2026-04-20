@@ -7,11 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import api from '@/lib/api';
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock, Mail } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -25,6 +23,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -33,80 +32,87 @@ export default function LoginPage() {
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
     try {
-      const res = await api.post('/user/auth/login', data);
-      localStorage.setItem('userId', res.data.user._id);
-      localStorage.setItem('isGhost', 'false');
-      toast.success("Welcome back!");
-      router.push('/myinterviews');
+      // Cookies are automatically securely handled
+      await api.post('/user/auth/login', data);
+      toast.success("Welcome back! Loading your profile...");
+      // Soft-reload to myinterviews so react query fetches fresh user via cookies
+      window.location.href = '/myinterviews';
     } catch (error: any) {
-      // Error handled by api interceptor toast
+      // API interceptor handles the error toast
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 pb-20 relative overflow-hidden">
-      <div className="absolute inset-0 premium-gradient opacity-10 blur-3xl -z-10"></div>
-      
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <Card className="glassmorphism border-primary/20 shadow-2xl">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-extrabold tracking-tight">Welcome back</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4 pt-4">
-              <div className="space-y-2 relative">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="email" 
-                    placeholder="name@example.com" 
-                    className="pl-10 bg-background/50" 
-                    {...register("email")} 
-                  />
-                </div>
-                {errors.email && <p className="text-xs text-destructive text-left">{errors.email.message}</p>}
-              </div>
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 bg-[#0F1115]">
+      <div className="w-full max-w-md space-y-8">
+        
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-white">Login to you account</h1>
+          <p className="text-sm text-gray-400">
+            Hey welcome back 👋, login to continue.
+          </p>
+        </div>
 
-              <div className="space-y-2 relative">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="password" 
-                    type="password"
-                    placeholder="••••••••" 
-                    className="pl-10 bg-background/50" 
-                    {...register("password")} 
-                  />
-                </div>
-                {errors.password && <p className="text-xs text-destructive text-left">{errors.password.message}</p>}
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col mt-4">
-              <Button type="submit" className="w-full font-bold h-12 premium-gradient text-white border-0 hover:opacity-90 transition-opacity" disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
-              </Button>
-              <p className="mt-6 text-sm text-center text-muted-foreground">
-                Don't have an account?{" "}
-                <Link href="/register" className="font-semibold text-primary hover:underline">
-                  Sign up
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
-        </Card>
-      </motion.div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs font-semibold text-gray-300">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+              <Input 
+                id="email" 
+                placeholder="name@example.com" 
+                className="pl-10 bg-[#161920] border-gray-800 text-white placeholder:text-gray-500 rounded-md focus-visible:ring-1 focus-visible:ring-indigo-500" 
+                {...register("email")} 
+              />
+            </div>
+            {errors.email && <p className="text-xs text-red-500 text-left">{errors.email.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs font-semibold text-gray-300">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+              <Input 
+                id="password" 
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••" 
+                className="pl-10 pr-10 bg-[#161920] border-gray-800 text-white placeholder:text-gray-500 rounded-md focus-visible:ring-1 focus-visible:ring-indigo-500" 
+                {...register("password")} 
+              />
+              <button 
+                type="button" 
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-300"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {errors.password ? (
+                <p className="text-xs text-red-500 text-left">{errors.password.message}</p>
+            ) : (
+                <p className="text-xs text-gray-500 text-left mt-1">Password must be at least 6 characters</p>
+            )}
+          </div>
+
+          <Button 
+            type="submit" 
+            disabled={loading}
+            className="w-full h-11 rounded-md font-medium text-black bg-gradient-to-r from-purple-400 to-pink-500 hover:opacity-90 transition-opacity border-0"
+          >
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Login"}
+          </Button>
+
+          <p className="text-sm text-center text-gray-400">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-gray-300 hover:text-white underline">
+              Register
+            </Link>
+          </p>
+        </form>
+
+      </div>
     </div>
   );
 }

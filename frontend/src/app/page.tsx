@@ -2,124 +2,90 @@
 
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Trophy, Zap, Clock, LogOut } from "lucide-react";
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import api from '@/lib/api';
+import { ArrowRight, Trophy, Zap, Clock } from "lucide-react";
+import { useUser } from '@/hooks/useUser';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem('userId'));
-  }, []);
-
-
+  const { isAuthenticated } = useAuthStore();
+  useUser();
 
   return (
-    <div className="flex flex-col min-h-screen">
-      
+    <div className="flex flex-col min-h-[calc(100vh-64px)] bg-[#0F1115] text-white">
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 flex flex-col items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 premium-gradient opacity-10 blur-3xl -z-10"></div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="container px-4 md:px-6 text-center"
-          >
-            <div className="space-y-4">
-              <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl leading-tight">
-                Master Your Next Technical <br />
-                <span className="text-transparent bg-clip-text premium-gradient">Interview with AI</span>
-              </h1>
-              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl leading-relaxed">
-                Practice with real-time feedback, voice interaction, and personalized evaluations. Try our "Ghost Login" to start practicing in seconds.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-6 mt-8">
-                {isAuthenticated ? (
-                  <>
-                    <Link href="/setup">
-                      <Button size="lg" className="px-8 font-semibold w-full sm:w-auto h-12 text-lg shadow-lg hover:scale-105 transition-transform duration-200">
-                        New Interview <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                    </Link>
-                    <Link href="/myinterviews">
-                      <Button size="lg" variant="outline" className="px-8 font-semibold w-full sm:w-auto h-12 text-lg hover:scale-105 transition-transform duration-200 glassmorphism">
-                        Recent Interviews
-                      </Button>
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/setup">
-                      <Button size="lg" className="px-8 font-semibold w-full sm:w-auto h-12 text-lg shadow-lg hover:scale-105 transition-transform duration-200">
-                        Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                    </Link>
-                    <Link href="/login">
-                      <Button size="lg" variant="outline" className="px-8 font-semibold w-full sm:w-auto h-12 text-lg hover:scale-105 transition-transform duration-200 glassmorphism">
-                        Sign In
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
+        <section className="w-full py-16 md:py-32 flex flex-col items-center justify-center">
+          <div className="container px-4 md:px-6 text-center space-y-6">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              Master Your Next Technical <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Interview with AI</span>
+            </h1>
+            <p className="mx-auto max-w-[700px] text-gray-400 md:text-xl">
+              Practice with real-time feedback, voice interaction, and personalized evaluations. Try our Ghost Login to start practicing in seconds.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+              {isAuthenticated ? (
+                <>
+                  <Link href="/setup">
+                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90">
+                      New Interview <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href="/myinterviews">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 font-medium border-gray-700 bg-[#161920] hover:bg-[#1E232D] text-white">
+                      Recent Interviews
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/setup">
+                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90">
+                      Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href="/login">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 font-medium border-gray-700 bg-[#161920] hover:bg-[#1E232D] text-white">
+                      Sign In
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
-          </motion.div>
+          </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-black/20 border-t border-white/5">
+        <section className="w-full py-16 bg-[#0B0D10] border-t border-gray-800">
           <div className="container px-4 md:px-6">
-            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="flex flex-col items-center space-y-4 text-center glassmorphism p-8 rounded-3xl hover:border-primary/50 transition-colors"
-              >
-                <div className="p-4 bg-primary/10 rounded-full">
-                  <Zap className="h-10 w-10 text-primary" />
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-col items-center space-y-4 text-center p-8 bg-[#161920] rounded-2xl border border-gray-800">
+                <div className="p-4 bg-purple-500/10 rounded-full">
+                  <Zap className="h-8 w-8 text-purple-400" />
                 </div>
-                <h3 className="text-2xl font-bold">Real-time STT/TTS</h3>
-                <p className="text-muted-foreground leading-relaxed">Natural conversation with our AI assistant through high-quality Speech-to-Text and Text-to-Speech.</p>
-              </motion.div>
+                <h3 className="text-xl font-semibold text-white">Real-time STT/TTS</h3>
+                <p className="text-sm text-gray-400">Natural conversation with our AI assistant through high-quality Speech-to-Text and Text-to-Speech.</p>
+              </div>
               
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="flex flex-col items-center space-y-4 text-center glassmorphism p-8 rounded-3xl hover:border-primary/50 transition-colors"
-              >
-                <div className="p-4 bg-primary/10 rounded-full">
-                  <Trophy className="h-10 w-10 text-primary" />
+              <div className="flex flex-col items-center space-y-4 text-center p-8 bg-[#161920] rounded-2xl border border-gray-800">
+                <div className="p-4 bg-pink-500/10 rounded-full">
+                  <Trophy className="h-8 w-8 text-pink-400" />
                 </div>
-                <h3 className="text-2xl font-bold">Deep Evaluation</h3>
-                <p className="text-muted-foreground leading-relaxed">Receive detailed feedback on technical skills, soft skills, and areas of improvement after every registered session.</p>
-              </motion.div>
+                <h3 className="text-xl font-semibold text-white">Deep Evaluation</h3>
+                <p className="text-sm text-gray-400">Receive detailed feedback on technical skills, soft skills, and areas of improvement after every session.</p>
+              </div>
               
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-col items-center space-y-4 text-center glassmorphism p-8 rounded-3xl hover:border-primary/50 transition-colors"
-              >
-                <div className="p-4 bg-primary/10 rounded-full">
-                  <Clock className="h-10 w-10 text-primary" />
+              <div className="flex flex-col items-center space-y-4 text-center p-8 bg-[#161920] rounded-2xl border border-gray-800">
+                <div className="p-4 bg-indigo-500/10 rounded-full">
+                  <Clock className="h-8 w-8 text-indigo-400" />
                 </div>
-                <h3 className="text-2xl font-bold">Ghost Mode</h3>
-                <p className="text-muted-foreground leading-relaxed">Try up to 2 full interviews without registration. Perfect for quick practice sessions to test the waters.</p>
-              </motion.div>
+                <h3 className="text-xl font-semibold text-white">Ghost Mode</h3>
+                <p className="text-sm text-gray-400">Try up to 2 full interviews without registration. Perfect for quick practice sessions to test the waters.</p>
+              </div>
             </div>
           </div>
         </section>
       </main>
-      <footer className="py-8 w-full shrink-0 items-center px-4 md:px-6 border-t border-white/10 bg-background/80 backdrop-blur-sm z-10">
-        <p className="text-sm text-center text-muted-foreground font-medium">
+      <footer className="py-8 w-full shrink-0 flex justify-center px-4 md:px-6 border-t border-gray-800 bg-[#0B0D10]">
+        <p className="text-sm text-gray-500">
           © 2026 AI Interviewer Inc. All rights reserved.
         </p>
       </footer>

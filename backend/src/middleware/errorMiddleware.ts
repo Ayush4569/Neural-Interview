@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 interface ErrorWithStatusCode extends Error {
     statusCode: number
 }
-const errorHandler = (err: ErrorWithStatusCode, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: ErrorWithStatusCode, req: Request, res: Response, next: NextFunction) => {
     const statusCode = err.statusCode || 500
     const message = err.message || "Internal server error"
 
@@ -21,4 +21,3 @@ const errorHandler = (err: ErrorWithStatusCode, req: Request, res: Response, nex
         })
 }
 
-export default errorHandler

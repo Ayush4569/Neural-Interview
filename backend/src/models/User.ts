@@ -6,6 +6,7 @@ export interface IUser extends Document {
   password: string;
   interviewCount: number;
   isGhost: boolean;
+  refreshTokens: string[];
   createdAt: Date;
   updatedAt: Date;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -17,6 +18,7 @@ const UserSchema: Schema<IUser> = new Schema(
     password: { type: String },
     interviewCount: { type: Number, default: 0 },
     isGhost: { type: Boolean, default: true },
+    refreshTokens: [{ type: String }],
   },
   { timestamps: true }
 );

@@ -1,46 +1,62 @@
-import { type Request, type Response, type NextFunction } from 'express';
-import User from '../models/User.js';
-import ErrorResponse from '../utils/errorResponse.js';
-import generateToken from '../utils/generateToken.js';
+import { type Request, type Response, type NextFunction } from "express";
+import User, { type IUser } from "../models/User.js";
+import ErrorResponse from "../utils/errorResponse.js";
+import {
+  accessTokenOptions,
+  refreshTokenOptions,
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/generateToken.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import type { JwtPayload } from "../middleware/authMiddleware.js";
 
-const sendTokenResponse = (user: any, statusCode: number, res: Response) => {
-  const token = generateToken(user._id, user.isGhost);
+const sendTokenResponse = async (
+  user: IUser,
+  statusCode: number,
+  res: Response,
+) => {
+  const accessToken = generateAccessToken(user._id, user.isGhost);
+  const refreshToken = generateRefreshToken(user._id, user.isGhost);
 
-  const options = {
-    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-    httpOnly: true,
-  };
+  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-  res.status(statusCode).cookie('jwt', token, options).json({
-    success: true,
-    user: {
-      _id: user._id,
-      email: user.email,
-      isGhost: user.isGhost,
-      interviewCount: user.interviewCount,
-    },
-  });
+  user.refreshTokens.push(hashedRefreshToken);
+  await user.save();
+
+  res
+    .status(statusCode)
+    .cookie("accessToken", accessToken, accessTokenOptions)
+    .cookie("refreshToken", refreshToken, refreshTokenOptions)
+    .json({
+      success: true,
+      user: {
+        _id: user._id,
+        email: user.email,
+        isGhost: user.isGhost,
+        interviewCount: user.interviewCount,
+      },
+    });
 };
 
-export const ghostLogin = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const ghostLogin = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
     const user = await User.create({
       isGhost: true,
       interviewCount: 0,
     });
-    sendTokenResponse(user, 201, res);
-  } catch (error) {
-    next(error);
-  }
-};
+    await sendTokenResponse(user, 201, res);
+  },
+);
 
-export const register = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const register = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return next(new ErrorResponse('Email already in use', 400));
+      throw new ErrorResponse("Email already in use", 400);
     }
 
     const user = await User.create({
@@ -49,56 +65,147 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       isGhost: false,
     });
 
-    sendTokenResponse(user, 201, res);
-  } catch (error) {
-    next(error);
-  }
-};
+    await sendTokenResponse(user, 201, res);
+  },
+);
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const login = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
-    if ([email, password].some((field) => !field)) {
-      return next(new ErrorResponse('Please provide an email and password', 400));
+    if (!email || !password) {
+      throw new ErrorResponse("Please provide an email and password", 400);
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return next(new ErrorResponse('Invalid credentials', 401));
+      throw new ErrorResponse("Invalid credentials", 401);
     }
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return next(new ErrorResponse('Invalid credentials', 401));
+      throw new ErrorResponse("Invalid credentials", 401);
     }
 
-    sendTokenResponse(user, 200, res);
-  } catch (error) {
-    next(error);
-  }
-};
+    await sendTokenResponse(user, 200, res);
+  },
+);
 
-export const logout = async (req: Request, res: Response, next: NextFunction) => {
-  res.cookie('jwt', 'none', {
-    expires: new Date(Date.now() + 10 * 1000), // 10 seconds
-    httpOnly: true,
-  });
+export const logout = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const incomingRefreshToken = req.cookies.refreshToken;
 
-  res.status(200).json({
-    success: true,
-    data: {},
-  });
-};
+    if (incomingRefreshToken) {
+      try {
+        const decoded = jwt.verify(
+          incomingRefreshToken,
+          process.env.JWT_REFRESH_SECRET!,
+          { ignoreExpiration: true },
+        ) as JwtPayload;
+        const user = await User.findById(decoded.id);
 
-export const getMe = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const user = await User.findById((req as any).user.id);
+        if (user) {
+          const activeTokens = [];
+          for (const token of user.refreshTokens) {
+            const isMatch = await bcrypt.compare(incomingRefreshToken, token);
+            if (!isMatch) activeTokens.push(token);
+          }
+          user.refreshTokens = activeTokens;
+          await user.save();
+        }
+      } catch (error) {
+        // Token invalid or other error; safe to just proceed to clear cookies
+      }
+    }
+
+    res.clearCookie("accessToken", accessTokenOptions);
+    res.clearCookie("refreshToken", refreshTokenOptions);
+
     res.status(200).json({
       success: true,
-      user,
+      data: {},
     });
-  } catch (error) {
-    next(error);
-  }
-};
+  },
+);
+
+export const getProfile = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user.id) {
+      throw new ErrorResponse("No user found with this id", 404);
+    }
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      throw new ErrorResponse("No user found with this id", 404);
+    }
+    res.status(200).json({
+      success: true,
+      user : {
+        _id: user._id,
+        email: user.email,
+        isGhost: user.isGhost,
+        interviewCount: user.interviewCount,
+      },
+    });
+  },
+);
+
+export const refreshToken = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const incomingRefreshToken = req.cookies.refreshToken;
+
+    if (!incomingRefreshToken)
+      throw new ErrorResponse("Unauthorized request", 401);
+
+    try {
+      const decoded = jwt.verify(
+        incomingRefreshToken,
+        process.env.JWT_REFRESH_SECRET!,
+      ) as JwtPayload;
+      const user = await User.findById(decoded.id);
+
+      if (!user) {
+        throw new ErrorResponse("Invalid refresh token", 401);
+      }
+      2;
+
+      let tokenIndex = -1;
+      for (let i = 0; i < user.refreshTokens.length; i++) {
+        const isMatch = await bcrypt.compare(
+          incomingRefreshToken,
+          user.refreshTokens[i]!,
+        );
+        if (isMatch) {
+          tokenIndex = i;
+          break;
+        }
+      }
+
+      if (tokenIndex === -1) {
+        user.refreshTokens = [];
+        await user.save();
+
+        throw new ErrorResponse("Possible token reuse detected", 401);
+      }
+
+      user.refreshTokens.splice(tokenIndex, 1);
+
+      const newAccessToken = generateAccessToken(user._id, user.isGhost);
+      const newRefreshToken = generateRefreshToken(user._id, user.isGhost);
+
+      const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+      user.refreshTokens.push(hashedRefreshToken);
+
+      await user.save();
+
+      res
+        .status(200)
+        .cookie("accessToken", newAccessToken, accessTokenOptions)
+        .cookie("refreshToken", newRefreshToken, refreshTokenOptions)
+        .json({
+          success: true,
+        });
+    } catch (error) {
+      throw new ErrorResponse("Invalid refresh token", 401);
+    }
+  },
+);

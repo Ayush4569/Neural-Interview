@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Zap, Loader2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { motion } from 'framer-motion';
 
 const formSchema = z.object({
   jobTitle: z.string().min(2, "Job title is required"),
@@ -95,12 +94,6 @@ export default function SetupPage() {
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-20 relative overflow-hidden">
       <div className="absolute inset-0 premium-gradient opacity-10 blur-3xl -z-10"></div>
 
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-2xl"
-      >
         <Card className="glassmorphism border-primary/20 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4">
             {isGhost && <Badge variant="destructive">Ghost Mode</Badge>}
@@ -164,7 +157,6 @@ export default function SetupPage() {
             </CardFooter>
           </form>
         </Card>
-      </motion.div>
     </div>
   );
 }

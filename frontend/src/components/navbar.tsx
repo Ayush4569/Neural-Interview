@@ -5,25 +5,19 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Zap, LogOut, LayoutDashboard, Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import api from '@/lib/api';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem('userId'));
-  }, [pathname]);
 
   const handleLogout = async () => {
     try {
       await api.get('/user/auth/logout');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('isGhost');
-      setIsAuthenticated(false);
+      useAuthStore.getState().clearUser();
       router.push('/');
       router.refresh();
     } catch (error) {
@@ -115,14 +109,7 @@ export function Navbar() {
       </div>
 
       {/* Mobile Navigation */}
-      <AnimatePresence>
         {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-white/10 bg-background/95 backdrop-blur-xl"
-          >
             <div className="container mx-auto px-4 py-6 flex flex-col gap-4">
               {navLinks.map((link) => (
                 <Link 
@@ -163,9 +150,7 @@ export function Navbar() {
                 </div>
               )}
             </div>
-          </motion.div>
         )}
-      </AnimatePresence>
     </nav>
   );
 }

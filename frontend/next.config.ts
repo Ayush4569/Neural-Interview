@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: '/Users/apple/Desktop/Web development/Full stack projects/Antigravity/frontend',
-  },
+  // Removed turbopack root because it caused distDirRoot issues
 };
 
 export default nextConfig;

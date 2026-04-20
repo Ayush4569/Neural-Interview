@@ -11,7 +11,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail, User as UserIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -53,12 +52,6 @@ export default function RegisterPage() {
     <div className="flex flex-col items-center justify-center min-h-screen px-4 pb-20 relative overflow-hidden">
       <div className="absolute inset-0 premium-gradient opacity-10 blur-3xl -z-10"></div>
       
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
-      >
         <Card className="glassmorphism border-primary/20 shadow-2xl">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-3xl font-extrabold tracking-tight">Create an account</CardTitle>
@@ -125,7 +118,6 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
-      </motion.div>
     </div>
   );
 }

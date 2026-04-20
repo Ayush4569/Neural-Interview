@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Bell, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 
 interface NotificationContextProps {
@@ -57,15 +56,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   return (
     <NotificationContext.Provider value={{ showNotification }}>
       {children}
-      <AnimatePresence>
         {notification && (
-          <motion.div
-            initial={{ opacity: 0, x: 100, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 100, scale: 0.9 }}
-            className="fixed top-20 right-4 z-[100] w-80 glassmorphism p-4 rounded-xl shadow-2xl border-l-4 border-l-primary"
-          >
-            <div className="flex gap-4">
+            <div className="fixed top-20 right-4 z-[100] w-80 glassmorphism p-4 rounded-xl shadow-2xl border-l-4 border-l-primary">
+              <div className="flex gap-4">
               <div className="bg-primary/10 p-2 rounded-full h-fit">
                 <Bell className="h-5 w-5 text-primary" />
               </div>
@@ -80,9 +73,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             <div className="mt-3 flex justify-end">
                 <button className="text-[10px] font-bold text-primary hover:underline">VIEW DETAILS</button>
             </div>
-          </motion.div>
+            </div>
         )}
-      </AnimatePresence>
     </NotificationContext.Provider>
   );
 };
