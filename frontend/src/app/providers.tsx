@@ -3,6 +3,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ReactNode, useState } from 'react';
+import { useUser } from '@/hooks/useUser';
+
+function AuthInitializer({ children }: { children: ReactNode }) {
+  useUser();
+  return <>{children}</>;
+}
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -17,10 +23,10 @@ export default function Providers({ children }: { children: ReactNode }) {
         },
       })
   );
-// useState here is used to create a stable, one-time instance — not for state updates
+
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthInitializer>{children}</AuthInitializer>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

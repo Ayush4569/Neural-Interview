@@ -1,14 +1,74 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Trophy, Zap, Clock } from "lucide-react";
+import { ArrowRight, Trophy, Zap, Clock, Code, Database, LayoutTemplate, Loader2 } from "lucide-react";
 import { useUser } from '@/hooks/useUser';
 import { useAuthStore } from '@/store/useAuthStore';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function Home() {
+  const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const [startingInterview, setStartingInterview] = useState<string | null>(null);
+  
+  // Call useUser to mount the check, relying on React Query cache for dedup
   useUser();
+
+  const handleQuickStart = async (template: any) => {
+    setStartingInterview(template.id);
+    try {
+      // If not authenticated, fetch guest token first
+      if (!isAuthenticated) {
+        await api.post('/user/auth/guest');
+      }
+
+      // Create the interview
+      const payload = {
+        jobTitle: template.jobTitle,
+        techStack: template.techStack.split(',').map((s: string) => s.trim()),
+        experienceLevel: template.experienceLevel,
+        duration: template.duration,
+        scheduledAt: new Date().toISOString(),
+      };
+      
+      const res = await api.post('/interviews', payload);
+      router.push(`/interview/${res.data.interview._id}`);
+    } catch (error) {
+      toast.error("Failed to start quick interview. Please try logging in.");
+      setStartingInterview(null);
+    }
+  };
+
+  const templates = [
+    {
+      id: "frontend",
+      jobTitle: "Senior Frontend Engineer",
+      techStack: "React, TypeScript, Next.js",
+      experienceLevel: "Senior",
+      duration: 5,
+      icon: <LayoutTemplate className="h-6 w-6 text-pink-400" />
+    },
+    {
+      id: "backend",
+      jobTitle: "Backend Developer",
+      techStack: "Node.js, Express, PostgreSQL",
+      experienceLevel: "Junior",
+      duration: 5,
+      icon: <Database className="h-6 w-6 text-indigo-400" />
+    },
+    {
+      id: "fullstack",
+      jobTitle: "Fullstack Engineer",
+      techStack: "React, Node.js, MongoDB",
+      experienceLevel: "Senior",
+      duration: 10,
+      icon: <Code className="h-6 w-6 text-purple-400" />
+    }
+  ];
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-[#0F1115] text-white">
@@ -26,12 +86,12 @@ export default function Home() {
               {isAuthenticated ? (
                 <>
                   <Link href="/setup">
-                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90">
+                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md">
                       New Interview <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                   <Link href="/myinterviews">
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 font-medium border-gray-700 bg-[#161920] hover:bg-[#1E232D] text-white">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 font-medium border-gray-700 bg-[#161920] hover:bg-[#1E232D] text-white rounded-md">
                       Recent Interviews
                     </Button>
                   </Link>
@@ -39,17 +99,60 @@ export default function Home() {
               ) : (
                 <>
                   <Link href="/setup">
-                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90">
+                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md">
                       Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                   <Link href="/login">
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 font-medium border-gray-700 bg-[#161920] hover:bg-[#1E232D] text-white">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 font-medium border-gray-700 bg-[#161920] hover:bg-[#1E232D] text-white rounded-md">
                       Sign In
                     </Button>
                   </Link>
                 </>
               )}
+            </div>
+          </div>
+        </section>
+
+        {/* Recommended Interviews Section */}
+        <section className="w-full py-16 bg-[#0B0D10] border-t border-gray-800">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center text-center space-y-4 mb-10">
+              <h2 className="text-3xl font-bold tracking-tight">Recommended Presets</h2>
+              <p className="text-gray-400">Click a card to immediately jump into a mock interview session.</p>
+            </div>
+            
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+              {templates.map((template) => (
+                <div 
+                  key={template.id} 
+                  onClick={() => handleQuickStart(template)}
+                  className="flex flex-col space-y-4 p-6 bg-[#161920] rounded-2xl border border-gray-800 hover:border-purple-500/50 hover:shadow-[0_0_30px_-10px_rgba(168,85,247,0.3)] transition-all cursor-pointer group"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="p-3 bg-gray-800/50 rounded-xl group-hover:bg-gray-800 transition-colors">
+                      {template.icon}
+                    </div>
+                    {startingInterview === template.id ? (
+                      <Loader2 className="h-5 w-5 text-purple-400 animate-spin" />
+                    ) : (
+                      <ArrowRight className="h-5 w-5 text-gray-600 group-hover:text-purple-400 transition-colors" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-1">{template.jobTitle}</h3>
+                    <p className="text-sm text-gray-400 line-clamp-1">{template.techStack}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-auto pt-4">
+                    <span className="px-3 py-1 bg-[#0F1115] border border-gray-800 text-xs text-gray-300 rounded-full font-medium">
+                      {template.experienceLevel}
+                    </span>
+                    <span className="px-3 py-1 bg-[#0F1115] border border-gray-800 text-xs text-gray-300 rounded-full font-medium flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {template.duration} mins
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>

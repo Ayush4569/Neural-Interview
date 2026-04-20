@@ -25,7 +25,7 @@ export const createInterview = async (req: Request, res: Response, next: NextFun
 
     res.status(201).json({ success: true, interview });
   } catch (error) {
-    next(error);
+    throw new ErrorResponse("Failed to create interview", 500);
   }
 };
 
@@ -56,7 +56,7 @@ export const startInterview = async (req: Request, res: Response, next: NextFunc
 
     res.status(200).json({ success: true, aiMessage, duration: interview.duration, status: interview.status });
   } catch (error) {
-    next(error);
+    throw new ErrorResponse("Failed to start interview", 500);
   }
 };
 
@@ -67,7 +67,7 @@ export const respondToInterview = async (req: Request, res: Response, next: Next
     const interview = await Interview.findById(id);
 
     if (!interview) {
-      return next(new ErrorResponse('Interview not found', 404));
+      throw new ErrorResponse("Interview not found", 404);
     }
 
     interview.transcript.push({ role: 'user', content: answer, timestamp: new Date() });
@@ -85,7 +85,7 @@ export const respondToInterview = async (req: Request, res: Response, next: Next
 
     res.status(200).json({ success: true, aiMessage });
   } catch (error) {
-    next(error);
+    throw new ErrorResponse("Failed to respond to interview", 500);
   }
 };
 
@@ -95,7 +95,7 @@ export const completeInterview = async (req: Request, res: Response, next: NextF
     const interview = await Interview.findById(id).populate('userId');
 
     if (!interview) {
-      return next(new ErrorResponse('Interview not found', 404));
+      throw new ErrorResponse("Interview not found", 404);
     }
 
     interview.status = 'completed';
@@ -113,23 +113,26 @@ export const completeInterview = async (req: Request, res: Response, next: NextF
         });
         console.log(`Evaluation completed for interview ${interview._id}`);
       } catch (e) {
-        console.error('Background Evaluation Failed:', e);
+        throw new ErrorResponse("Failed to evaluate interview", 500);
       }
     });
 
     res.status(200).json({ success: true, message: 'Interview completed' });
   } catch (error) {
-    next(error);
+   throw new ErrorResponse("Failed to complete interview", 500);
   }
 };
 
 export const getUserInterviews = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const user = (req as any).user;
-        const interviews = await Interview.find({ userId: user._id }).sort({ createdAt: -1 });
+      if(!req.user || !req.user.id){
+        throw new ErrorResponse("User not found", 404);
+      }
+        const user = req.user;
+        const interviews = await Interview.find({ userId: user.id }).sort({ createdAt: -1 });
         res.status(200).json({ success: true, interviews });
     } catch (error) {
-        next(error);
+        throw new ErrorResponse("Failed to get user interviews", 500);
     }
 };
 
@@ -138,10 +141,10 @@ export const getEvaluation = async (req: Request, res: Response, next: NextFunct
         const { id } = req.params;
         const evaluation = await Evaluation.findOne({ interviewId: new mongoose.Types.ObjectId(id as string) });
         if (!evaluation) {
-            return next(new ErrorResponse('Evaluation not found or still processing', 404));
+            throw new ErrorResponse("Evaluation not found or still processing", 404);
         }
         res.status(200).json({ success: true, evaluation });
     } catch (error) {
-        next(error);
+        throw new ErrorResponse("Failed to get evaluation", 500);
     }
 }

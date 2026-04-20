@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import api from '@/lib/api';
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink, Calendar as CalendarIcon, ClipboardCheck, AlertCircle, Zap, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, ClipboardCheck, AlertCircle, Zap } from 'lucide-react';
 import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useInterviews } from '@/hooks/useInterviews';
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
@@ -13,22 +11,6 @@ import Link from 'next/link';
 export default function MyInterviewsPage() {
   const { user } = useAuthStore();
   const { data: interviews, isLoading, isError } = useInterviews();
-  
-  const [selectedEvaluation, setSelectedEvaluation] = useState<any>(null);
-  const [evalLoading, setEvalLoading] = useState(false);
-
-  const fetchEvaluation = async (id: string) => {
-    setEvalLoading(true);
-    setSelectedEvaluation(null);
-    try {
-      const res = await api.get(`/interviews/session/${id}/report`);
-      setSelectedEvaluation(res.data.evaluation);
-    } catch (error) {
-      // Handled globally
-    } finally {
-      setEvalLoading(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -75,7 +57,7 @@ export default function MyInterviewsPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {interviews.map((interview: any) => (
+            {interviews?.map((interview: any) => (
               <div key={interview._id} className="bg-[#161920] rounded-2xl border border-gray-800 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:border-gray-700 transition-colors">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
@@ -94,116 +76,14 @@ export default function MyInterviewsPage() {
                 </div>
 
                 {interview.status === 'completed' && (
-                  <Dialog>
-                    <DialogTrigger >
-                      <Button 
-                        onClick={() => fetchEvaluation(interview._id)}
-                        variant="outline" 
-                        className="bg-[#1A1D24] border-gray-700 hover:bg-[#252A36] text-white h-11 px-6 rounded-md"
-                      >
-                        <ClipboardCheck className="mr-2 h-4 w-4" /> Feedback
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-3xl bg-[#0F1115] border-gray-800 text-white p-0 overflow-hidden rounded-2xl shadow-2xl">
-                      {evalLoading ? (
-                        <div className="p-20 flex flex-col items-center justify-center gap-4">
-                          <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
-                          <p className="text-gray-400">Loading your evaluation...</p>
-                        </div>
-                      ) : selectedEvaluation ? (
-                        <div className="flex flex-col h-[80vh] max-h-[800px] overflow-y-auto custom-scrollbar p-6 md:p-10">
-                          
-                          <div className="mb-8">
-                            <h2 className="text-3xl font-semibold mb-2">Feedback on your Interview</h2>
-                            <p className="text-gray-400 capitalize">{interview.jobTitle} Candidate</p>
-                          </div>
-
-                          {/* Overall Dashboard Hero */}
-                          <div className="flex flex-col md:flex-row items-center gap-8 mb-10 p-8 bg-[#161920] rounded-3xl border border-gray-800">
-                            {/* Score Ring */}
-                            <div className="relative flex items-center justify-center flex-shrink-0">
-                               <svg className="w-32 h-32 transform -rotate-90">
-                                 <circle cx="64" cy="64" r="56" className="stroke-gray-800" strokeWidth="12" fill="none" />
-                                 <circle 
-                                   cx="64" cy="64" r="56" 
-                                   className="stroke-purple-500 outline-none" 
-                                   strokeWidth="12" fill="none" 
-                                   strokeDasharray="351.858" 
-                                   strokeDashoffset={351.858 - (351.858 * (selectedEvaluation.score || 0)) / 100} 
-                                   strokeLinecap="round" 
-                                 />
-                               </svg>
-                               <div className="absolute flex flex-col items-center justify-center">
-                                 <span className="text-3xl font-bold">{selectedEvaluation.score}</span>
-                                 <span className="text-xs text-gray-500 font-semibold">/ 100</span>
-                               </div>
-                            </div>
-                            <div className="flex-1 space-y-2 text-center md:text-left">
-                              <h3 className="text-2xl font-semibold">Overall Impression</h3>
-                              <p className="text-gray-400 leading-relaxed">
-                                {selectedEvaluation.feedback}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Breakdown Grids */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                             <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-6">
-                                <h4 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
-                                  <Zap className="h-5 w-5" /> Key Strengths
-                                </h4>
-                                <ul className="space-y-3">
-                                  {selectedEvaluation.strengths?.map((item: string, i: number) => (
-                                    <li key={i} className="text-gray-300 text-sm flex gap-3"><span className="text-green-500 mt-0.5">•</span> {item}</li>
-                                  ))}
-                                </ul>
-                             </div>
-                             
-                             <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
-                                <h4 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
-                                  <AlertCircle className="h-5 w-5" /> Core Weaknesses
-                                </h4>
-                                <ul className="space-y-3">
-                                  {selectedEvaluation.weaknesses?.map((item: string, i: number) => (
-                                    <li key={i} className="text-gray-300 text-sm flex gap-3"><span className="text-red-500 mt-0.5">•</span> {item}</li>
-                                  ))}
-                                </ul>
-                             </div>
-                          </div>
-
-                          {/* Final Verdict / Improvements */}
-                          <div className="bg-[#161920] border border-gray-800 rounded-2xl p-6 mb-10">
-                            <h4 className="text-lg font-semibold mb-4 border-b border-gray-800 pb-2">Final Verdict & Next Steps</h4>
-                            <ul className="space-y-3">
-                              {selectedEvaluation.improvements?.map((item: string, i: number) => (
-                                <li key={i} className="text-gray-400 text-sm flex gap-3"><span className="text-purple-500 mt-0.5">→</span> {item}</li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          {/* Bottom Actions */}
-                          <div className="flex flex-col sm:flex-row gap-4 mt-auto border-t border-gray-800 pt-6">
-                            <Link href="/myinterviews" className="flex-1">
-                              <DialogTrigger >
-                                <Button variant="outline" className="w-full h-12 bg-[#1A1D24] border-gray-700 hover:bg-[#252A36] text-white">
-                                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to dashboard
-                                </Button>
-                              </DialogTrigger>
-                            </Link>
-
-                            <Link href="/setup" className="flex-1">
-                              <Button className="w-full h-12 bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium">
-                                <RotateCcw className="mr-2 h-4 w-4" /> Retake interview
-                              </Button>
-                            </Link>
-                          </div>
-
-                        </div>
-                      ) : (
-                        <div className="p-20 text-center text-gray-500">No evaluation found.</div>
-                      )}
-                    </DialogContent>
-                  </Dialog>
+                  <Link href={`/evaluation/${interview._id}`}>
+                    <Button 
+                      variant="outline" 
+                      className="bg-[#1A1D24] border-gray-700 hover:bg-[#252A36] text-white h-11 px-6 rounded-md"
+                    >
+                      <ClipboardCheck className="mr-2 h-4 w-4" /> Feedback
+                    </Button>
+                  </Link>
                 )}
                 
                 {interview.status === 'pending' && (
