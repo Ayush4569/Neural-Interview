@@ -12,17 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { registerSchema } from '@/schemas';
 
-const formSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,7 +23,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(registerSchema),
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -39,9 +31,9 @@ export default function RegisterPage() {
     try {
       await api.post('/user/auth/register', { email: data.email, password: data.password });
       toast.success("Account created successfully!");
-      window.location.href = '/myinterviews';
-    } catch (error: any) {
-      // Error handled by api interceptor toast
+      router.push('/myinterviews');
+    } catch (error: unknown) {
+      toast.error("Registration failed. Email might already exist.");
     } finally {
       setLoading(false);
     }
@@ -120,7 +112,7 @@ export default function RegisterPage() {
           <Button 
             type="submit" 
             disabled={loading}
-            className="w-full h-11 rounded-md font-medium text-black bg-gradient-to-r from-purple-400 to-pink-500 hover:opacity-90 transition-opacity border-0"
+            className="w-full h-11 rounded-md font-medium text-black bg-linear-to-r from-purple-400 to-pink-500 hover:opacity-90 transition-opacity border-0"
           >
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign Up"}
           </Button>

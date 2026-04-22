@@ -31,6 +31,7 @@ const sendTokenResponse = async (
     .cookie("refreshToken", refreshToken, refreshTokenOptions)
     .json({
       success: true,
+      message: "User logged in successfully",
       user: {
         _id: user._id,
         email: user.email,
@@ -53,7 +54,9 @@ export const ghostLogin = asyncHandler(
 export const register = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
-
+    if([email, password].some(field => !field)) {
+      throw new ErrorResponse("Please provide an email and password", 400);
+    }
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       throw new ErrorResponse("Email already in use", 400);
@@ -73,18 +76,18 @@ export const login = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if ([email, password].some(field => !field)) {
       throw new ErrorResponse("Please provide an email and password", 400);
     }
 
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      throw new ErrorResponse("Invalid credentials", 401);
+      throw new ErrorResponse("User not found", 401);
     }
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      throw new ErrorResponse("Invalid credentials", 401);
+      throw new ErrorResponse("Invalid password", 401);
     }
 
     await sendTokenResponse(user, 200, res);
@@ -114,7 +117,12 @@ export const logout = asyncHandler(
           await user.save();
         }
       } catch (error) {
-        // Token invalid or other error; safe to just proceed to clear cookies
+        res.clearCookie("accessToken", accessTokenOptions);
+        res.clearCookie("refreshToken", refreshTokenOptions);
+        return res.status(401).json({
+          success: false,
+          message: "Invalid refresh token",
+        });
       }
     }
 
@@ -123,7 +131,7 @@ export const logout = asyncHandler(
 
     res.status(200).json({
       success: true,
-      data: {},
+      message: "User logged out successfully",
     });
   },
 );
@@ -166,7 +174,6 @@ export const refreshToken = asyncHandler(
       if (!user) {
         throw new ErrorResponse("Invalid refresh token", 401);
       }
-      2;
 
       let tokenIndex = -1;
       for (let i = 0; i < user.refreshTokens.length; i++) {

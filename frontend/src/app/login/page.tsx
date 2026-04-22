@@ -12,13 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { loginSchema } from '@/schemas';
 
-const formSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,7 +22,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -37,7 +33,7 @@ export default function LoginPage() {
       toast.success("Welcome back! Loading your profile...");
       // Soft-reload to myinterviews so react query fetches fresh user via cookies
       window.location.href = '/myinterviews';
-    } catch (error: any) {
+    } catch (error: unknown) {
       // API interceptor handles the error toast
     } finally {
       setLoading(false);
@@ -99,7 +95,7 @@ export default function LoginPage() {
           <Button 
             type="submit" 
             disabled={loading}
-            className="w-full h-11 rounded-md font-medium text-black bg-gradient-to-r from-purple-400 to-pink-500 hover:opacity-90 transition-opacity border-0"
+            className="w-full h-11 rounded-md font-medium text-black bg-linear-to-r from-purple-400 to-pink-500 hover:opacity-90 transition-opacity border-0"
           >
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Login"}
           </Button>

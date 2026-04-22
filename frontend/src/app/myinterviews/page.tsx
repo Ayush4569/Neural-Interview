@@ -1,12 +1,12 @@
 'use client';
 
-import api from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Loader2, Calendar as CalendarIcon, ClipboardCheck, AlertCircle, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { useInterviews } from '@/hooks/useInterviews';
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
+import { Interview } from '@/types';
 
 export default function MyInterviewsPage() {
   const { user } = useAuthStore();
@@ -50,14 +50,14 @@ export default function MyInterviewsPage() {
             <h3 className="text-xl font-medium mb-2">No Interviews Yet</h3>
             <p className="text-gray-400 mb-6 max-w-md">You haven't completed any practice sessions. Start your first AI interview to receive detailed feedback.</p>
             <Link href="/setup">
-              <Button className="bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium h-11 px-8 rounded-md">
+              <Button className="bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium h-11 px-8 rounded-md">
                 Schedule New Interview
               </Button>
             </Link>
           </div>
         ) : (
           <div className="grid gap-4">
-            {interviews?.map((interview: any) => (
+            {interviews?.map((interview: Interview) => (
               <div key={interview._id} className="bg-[#161920] rounded-2xl border border-gray-800 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:border-gray-700 transition-colors">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">

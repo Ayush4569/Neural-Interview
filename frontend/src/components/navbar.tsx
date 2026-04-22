@@ -88,7 +88,7 @@ export function Navbar() {
                     <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-[#1A1D24]">Log in</Button>
                   </Link>
                   <Link href="/setup">
-                    <Button size="sm" className="bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium font-semibold">
+                    <Button size="sm" className="bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium font-semibold">
                       Get Started
                     </Button>
                   </Link>
@@ -144,7 +144,7 @@ export function Navbar() {
                   <Button variant="outline" className="w-full bg-[#1A1D24] border-gray-700 text-white">Log in</Button>
                 </Link>
                 <Link href="/setup" onClick={() => setIsMenuOpen(false)} className="w-full">
-                  <Button className="w-full bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 font-medium">Get Started</Button>
+                  <Button className="w-full bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 font-medium">Get Started</Button>
                 </Link>
               </div>
             )}

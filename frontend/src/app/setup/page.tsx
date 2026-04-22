@@ -15,16 +15,10 @@ import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUser } from '@/hooks/useUser';
 import { useQueryClient } from '@tanstack/react-query';
+import { setupInterviewSchema } from '@/schemas';
+import { toast } from 'sonner';
 
-const formSchema = z.object({
-  jobTitle: z.string().min(2, "Job title is required"),
-  techStack: z.string().min(2, "At least one technology is required"),
-  experienceLevel: z.enum(['Entry', 'Junior', 'Senior', 'Expert']),
-  duration: z.string(),
-  scheduledAt: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof setupInterviewSchema>;
 
 export default function SetupPage() {
   const router = useRouter();
@@ -35,7 +29,6 @@ export default function SetupPage() {
   const [initLoading, setInitLoading] = useState(true);
 
   useEffect(() => {
-    // Wait until React Query finishes checking for an active user session
     if (isFetchingUser) return;
 
     if (!isAuthenticated) {
@@ -43,7 +36,7 @@ export default function SetupPage() {
         try {
           await api.post('/user/auth/guest');
           await queryClient.invalidateQueries({ queryKey: ['user'] });
-        } catch (error) {
+        } catch (error: unknown) {
           console.error(error);
         } finally {
           setInitLoading(false);
@@ -56,7 +49,7 @@ export default function SetupPage() {
   }, [isAuthenticated, isFetchingUser, queryClient]);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(setupInterviewSchema),
     defaultValues: {
       experienceLevel: 'Junior',
       duration: '5',
@@ -69,17 +62,17 @@ export default function SetupPage() {
     setLoading(true);
     try {
       const payload = {
-        ...data,
-        techStack: data.techStack.split(',').map(s => s.trim()),
-        duration: parseInt(data.duration),
-        scheduledAt: data.scheduledAt || new Date().toISOString(),
+        jobTitle: data.jobTitle,
+        techStack: data.techStack.split(',').map((s: string) => s.trim()),
+        experienceLevel: data.experienceLevel,
+        duration: parseInt(data.duration, 10),
+        scheduledAt: new Date().toISOString(),
       };
+      
       const res = await api.post('/interviews', payload);
       router.push(`/interview/${res.data.interview._id}`);
-    } catch (error: any) {
-      if (error.response?.status === 403) {
-        router.push('/login');
-      }
+    } catch (error: unknown) {
+      toast.error("Failed to setup interview. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -137,7 +130,7 @@ export default function SetupPage() {
               <Label className="text-xs font-semibold text-gray-300">Experience Level</Label>
               <RadioGroup 
                 defaultValue="Junior" 
-                onValueChange={(v) => setValue("experienceLevel", v as any)} 
+                onValueChange={(v) => setValue("experienceLevel", v)} 
                 className="grid grid-cols-2 sm:grid-cols-4 gap-4"
               >
                 {['Entry', 'Junior', 'Senior', 'Expert'].map((level) => (
@@ -172,7 +165,7 @@ export default function SetupPage() {
             <div className="pt-4 mt-8 border-t border-gray-800">
               <Button 
                 type="submit" 
-                className="w-full font-bold h-12 bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md" 
+                className="w-full font-bold h-12 bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md" 
                 disabled={loading}
               >
                 {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Start Interview Immediately"}

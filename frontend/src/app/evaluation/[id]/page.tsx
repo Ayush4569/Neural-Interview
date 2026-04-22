@@ -12,9 +12,9 @@ export default function EvaluationPage() {
   const params = useParams();
   const id = params.id as string;
   
-  const { data: evaluation, isLoading, error } = useGetEvaluation(id);
+  const { data: evaluation, isPending, error } = useGetEvaluation(id);
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-[#0F1115]">
         <Loader2 className="h-10 w-10 animate-spin text-purple-500 mb-4" />
@@ -61,7 +61,7 @@ export default function EvaluationPage() {
           {/* Overall Dashboard Hero */}
           <div className="flex flex-col md:flex-row items-center gap-8 mb-12 p-8 bg-[#0F1115] rounded-3xl border border-gray-800">
             {/* Score Ring */}
-            <div className="relative flex items-center justify-center flex-shrink-0">
+            <div className="relative flex items-center justify-center shrink-0">
                <svg className="w-40 h-40 transform -rotate-90">
                  <circle cx="80" cy="80" r="72" className="stroke-gray-800" strokeWidth="14" fill="none" />
                  <circle 
@@ -124,7 +124,7 @@ export default function EvaluationPage() {
           {/* Bottom Actions */}
           <div className="flex flex-col sm:flex-row gap-4 mt-auto border-t border-gray-800 pt-8">
             <Link href="/setup" className="flex-1">
-              <Button className="w-full h-14 text-lg bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium rounded-xl">
+              <Button className="w-full h-14 text-lg bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium rounded-xl">
                 <RotateCcw className="mr-2 h-5 w-5" /> Retake Practice Interview
               </Button>
             </Link>

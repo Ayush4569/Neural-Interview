@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume2, User, RefreshCcw, LogOut, Loader2, Bot } from 'lucide-react';
+import { SpeechRecognitionEvent, ISpeechRecognition, ISpeechRecognitionConstructor } from '@/types/speech';
+import { Bot, Loader2, LogOut, Mic, MicOff, RefreshCcw, User, Volume2 } from 'lucide-react';
 
 export default function InterviewRoom({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -15,20 +16,21 @@ export default function InterviewRoom({ params }: { params: Promise<{ id: string
   const [currentCaption, setCurrentCaption] = useState('Initializing interview...');
   const [lastAiMessage, setLastAiMessage] = useState('');
   
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptRef = useRef<string>('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
+      const SpeechRecognition = (window as unknown as { SpeechRecognition: ISpeechRecognitionConstructor, webkitSpeechRecognition: ISpeechRecognitionConstructor }).SpeechRecognition || (window as unknown as { SpeechRecognition: ISpeechRecognitionConstructor, webkitSpeechRecognition: ISpeechRecognitionConstructor }).webkitSpeechRecognition;
+      if (SpeechRecognition ) {
+        
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
 
-        recognitionRef.current.onresult = (event: any) => {
+        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
           let interimTranscript = '';
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             if (event.results[i].isFinal) {
@@ -52,7 +54,7 @@ export default function InterviewRoom({ params }: { params: Promise<{ id: string
           }, 3000);
         };
 
-        recognitionRef.current.onerror = (event: any) => {
+        recognitionRef.current.onerror = (event: Event) => {
           setIsListening(false);
         };
         recognitionRef.current.onend = () => setIsListening(false);
@@ -163,7 +165,7 @@ export default function InterviewRoom({ params }: { params: Promise<{ id: string
           
           {/* AI Card */}
           <div className={`flex flex-col items-center justify-center bg-[#161920] rounded-3xl border ${isSpeaking ? 'border-indigo-500 shadow-[0_0_30px_-5px_rgba(99,102,241,0.4)]' : 'border-gray-800'} transition-all duration-300`}>
-             <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center border-4 border-[#1E232D]">
+             <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-linear-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center border-4 border-[#1E232D]">
                {isSpeaking && (
                  <div className="absolute inset-0 rounded-full border-2 border-indigo-400 animate-ping opacity-20"></div>
                )}
@@ -174,7 +176,7 @@ export default function InterviewRoom({ params }: { params: Promise<{ id: string
 
           {/* User Card */}
           <div className={`flex flex-col items-center justify-center bg-[#161920] rounded-3xl border ${isListening ? 'border-pink-500 shadow-[0_0_30px_-5px_rgba(236,72,153,0.4)]' : 'border-gray-800'} transition-all duration-300`}>
-             <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center border-4 border-[#1E232D]">
+             <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-linear-to-br from-gray-700 to-gray-900 flex items-center justify-center border-4 border-[#1E232D]">
                {isListening && (
                  <div className="absolute inset-0 rounded-full border-2 border-pink-400 animate-ping opacity-20"></div>
                )}
@@ -211,7 +213,7 @@ export default function InterviewRoom({ params }: { params: Promise<{ id: string
           <Button 
             onClick={toggleMic}
             className={`h-14 w-14 rounded-full border-0 shadow-lg flex items-center justify-center ${
-              isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:opacity-90'
+              isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-linear-to-r from-purple-500 to-indigo-500 hover:opacity-90'
             }`}
           >
             {isListening ? <MicOff className="h-6 w-6 text-white" /> : <Mic className="h-6 w-6 text-white" />}

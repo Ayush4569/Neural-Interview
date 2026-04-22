@@ -4,21 +4,22 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Trophy, Zap, Clock, Code, Database, LayoutTemplate, Loader2 } from "lucide-react";
+import { ArrowRight, Trophy, Zap, Clock, Loader2 } from "lucide-react";
 import { useUser } from '@/hooks/useUser';
 import { useAuthStore } from '@/store/useAuthStore';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { RECOMMENDED_TEMPLATES } from '@/constants';
+import { Template } from '@/types';
 
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const [startingInterview, setStartingInterview] = useState<string | null>(null);
-  
-  // Call useUser to mount the check, relying on React Query cache for dedup
+
   useUser();
 
-  const handleQuickStart = async (template: any) => {
+  const handleQuickStart = async (template: Template) => {
     setStartingInterview(template.id);
     try {
       // If not authenticated, fetch guest token first
@@ -37,38 +38,11 @@ export default function Home() {
       
       const res = await api.post('/interviews', payload);
       router.push(`/interview/${res.data.interview._id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Failed to start quick interview. Please try logging in.");
       setStartingInterview(null);
     }
   };
-
-  const templates = [
-    {
-      id: "frontend",
-      jobTitle: "Senior Frontend Engineer",
-      techStack: "React, TypeScript, Next.js",
-      experienceLevel: "Senior",
-      duration: 5,
-      icon: <LayoutTemplate className="h-6 w-6 text-pink-400" />
-    },
-    {
-      id: "backend",
-      jobTitle: "Backend Developer",
-      techStack: "Node.js, Express, PostgreSQL",
-      experienceLevel: "Junior",
-      duration: 5,
-      icon: <Database className="h-6 w-6 text-indigo-400" />
-    },
-    {
-      id: "fullstack",
-      jobTitle: "Fullstack Engineer",
-      techStack: "React, Node.js, MongoDB",
-      experienceLevel: "Senior",
-      duration: 10,
-      icon: <Code className="h-6 w-6 text-purple-400" />
-    }
-  ];
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] bg-[#0F1115] text-white">
@@ -77,7 +51,7 @@ export default function Home() {
           <div className="container px-4 md:px-6 text-center space-y-6">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
               Master Your Next Technical <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Interview with AI</span>
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">Interview with AI</span>
             </h1>
             <p className="mx-auto max-w-[700px] text-gray-400 md:text-xl">
               Practice with real-time feedback, voice interaction, and personalized evaluations. Try our Ghost Login to start practicing in seconds.
@@ -86,7 +60,7 @@ export default function Home() {
               {isAuthenticated ? (
                 <>
                   <Link href="/setup">
-                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md">
+                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md">
                       New Interview <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
@@ -99,7 +73,7 @@ export default function Home() {
               ) : (
                 <>
                   <Link href="/setup">
-                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-gradient-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md">
+                    <Button size="lg" className="w-full sm:w-auto h-12 px-8 font-medium bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 rounded-md">
                       Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
@@ -123,7 +97,7 @@ export default function Home() {
             </div>
             
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
-              {templates.map((template) => (
+              {RECOMMENDED_TEMPLATES.map((template: Template) => (
                 <div 
                   key={template.id} 
                   onClick={() => handleQuickStart(template)}
