@@ -1,24 +1,31 @@
 export interface User {
-  _id?: string;
-  name: string;
-  email?: string;
-  isGhost?: boolean;
+  _id: string;
+  username: string;
+  email: string;
+  isGhost: boolean;
+  interviewCount: number;
 }
 
 export interface Interview {
   _id: string;
-  userId: string | User;
   jobTitle: string;
   techStack: string[];
-  experienceLevel: string;
-  duration: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  experienceLevel: "0-1" | "1-3" | "3-5" | "5+";
+  plannedDuration: number; 
+  actualDuration: number;
+  optionalPrompt?: string;
   scheduledAt: Date;
+  status: "scheduled" | "live" | "completed" | "failed" | "expired";
+  startTime?: Date;
+  endTime?: Date;
+  errorReason?: string;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface Evaluation {
+  _id: string;
   score: number;
   feedback: string;
   strengths: string[];

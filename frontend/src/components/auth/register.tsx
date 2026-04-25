@@ -13,15 +13,16 @@ import { Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { registerSchema } from '@/schemas';
+import { useAuthStore } from '@/store/useAuthStore';
 
 type FormValues = z.infer<typeof registerSchema>;
 
-export default function RegisterPage() {
+export default function Register() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const setUser = useAuthStore(state => state.setUser)
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(registerSchema),
   });
@@ -29,8 +30,9 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
     try {
-      await api.post('/user/auth/register', { email: data.email, password: data.password });
+      const res = await api.post('/user/auth/register', { ...data,device : navigator.platform || navigator.userAgent });
       toast.success("Account created successfully!");
+      setUser(res.data.user);
       router.push('/myinterviews');
     } catch (error: unknown) {
       toast.error("Registration failed. Email might already exist.");
@@ -51,6 +53,19 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="username" className="text-xs font-semibold text-gray-300">Username</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+              <Input 
+                id="username" 
+                placeholder="name@example.com" 
+                className="pl-10 bg-[#161920] border-gray-800 text-white placeholder:text-gray-500 rounded-md focus-visible:ring-1 focus-visible:ring-indigo-500" 
+                {...register("username")} 
+              />
+            </div>
+            {errors.email && <p className="text-xs text-red-500 text-left">{errors.email.message}</p>}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email" className="text-xs font-semibold text-gray-300">Email</Label>
             <div className="relative">

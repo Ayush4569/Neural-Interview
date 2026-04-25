@@ -13,13 +13,15 @@ import { Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { loginSchema } from '@/schemas';
+import { useAuthStore } from '@/store/useAuthStore';
 
 type FormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const setUser = useAuthStore(state => state.setUser)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(loginSchema),
@@ -28,11 +30,10 @@ export default function LoginPage() {
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
     try {
-      // Cookies are automatically securely handled
-      await api.post('/user/auth/login', data);
-      toast.success("Welcome back! Loading your profile...");
-      // Soft-reload to myinterviews so react query fetches fresh user via cookies
-      window.location.href = '/myinterviews';
+      const res = await api.post('/user/auth/login', {...data,device : navigator.platform || navigator.userAgent});
+      toast.success("Login successfull");
+      setUser(res.data.user);
+      router.push('/myinterviews');
     } catch (error: unknown) {
       // API interceptor handles the error toast
     } finally {

@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import User, { type IUser } from "../models/User.js";
+import { type IUser,User } from "../models/User.js";
 import ErrorResponse from "../utils/errorResponse.js";
 import {
   accessTokenOptions,
@@ -16,13 +16,18 @@ const sendTokenResponse = async (
   user: IUser,
   statusCode: number,
   res: Response,
+  device: string,
 ) => {
   const accessToken = generateAccessToken(user._id, user.isGhost);
   const refreshToken = generateRefreshToken(user._id, user.isGhost);
 
   const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-  user.refreshTokens.push(hashedRefreshToken);
+  user.refreshTokens.push({
+    token: hashedRefreshToken,
+    createdAt: new Date(),
+    device: device ?? "unknown",
+  });
   await user.save();
 
   res
@@ -34,6 +39,7 @@ const sendTokenResponse = async (
       message: "User logged in successfully",
       user: {
         _id: user._id,
+        username: user.username,
         email: user.email,
         isGhost: user.isGhost,
         interviewCount: user.interviewCount,
@@ -47,14 +53,14 @@ export const ghostLogin = asyncHandler(
       isGhost: true,
       interviewCount: 0,
     });
-    await sendTokenResponse(user, 201, res);
+    await sendTokenResponse(user, 201, res,req.headers["user-agent"] || "unknown");
   },
 );
 
 export const register = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
-    if([email, password].some(field => !field)) {
+    const { email, password,device } = req.body;
+    if([email, password,device].some(field => !field)) {
       throw new ErrorResponse("Please provide an email and password", 400);
     }
     const existingUser = await User.findOne({ email });
@@ -68,15 +74,15 @@ export const register = asyncHandler(
       isGhost: false,
     });
 
-    await sendTokenResponse(user, 201, res);
+    await sendTokenResponse(user, 201, res,device);
   },
 );
 
 export const login = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
+    const { email, password ,device} = req.body;
 
-    if ([email, password].some(field => !field)) {
+    if ([email, password,device].some(field => !field)) {
       throw new ErrorResponse("Please provide an email and password", 400);
     }
 
@@ -90,7 +96,7 @@ export const login = asyncHandler(
       throw new ErrorResponse("Invalid password", 401);
     }
 
-    await sendTokenResponse(user, 200, res);
+    await sendTokenResponse(user, 200, res,device);
   },
 );
 
@@ -109,9 +115,9 @@ export const logout = asyncHandler(
 
         if (user) {
           const activeTokens = [];
-          for (const token of user.refreshTokens) {
-            const isMatch = await bcrypt.compare(incomingRefreshToken, token);
-            if (!isMatch) activeTokens.push(token);
+          for (const refreshToken of user.refreshTokens) {
+            const isMatch = await bcrypt.compare(incomingRefreshToken, refreshToken.token);
+            if (!isMatch) activeTokens.push(refreshToken);
           }
           user.refreshTokens = activeTokens;
           await user.save();
@@ -149,6 +155,7 @@ export const getProfile = asyncHandler(
       success: true,
       user : {
         _id: user._id,
+        username: user.username,
         email: user.email,
         isGhost: user.isGhost,
         interviewCount: user.interviewCount,
@@ -179,7 +186,7 @@ export const refreshToken = asyncHandler(
       for (let i = 0; i < user.refreshTokens.length; i++) {
         const isMatch = await bcrypt.compare(
           incomingRefreshToken,
-          user.refreshTokens[i]!,
+          user.refreshTokens[i]!.token,
         );
         if (isMatch) {
           tokenIndex = i;
@@ -200,7 +207,11 @@ export const refreshToken = asyncHandler(
       const newRefreshToken = generateRefreshToken(user._id, user.isGhost);
 
       const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
-      user.refreshTokens.push(hashedRefreshToken);
+      user.refreshTokens.push({
+        token: hashedRefreshToken,
+        createdAt: new Date(),
+        device: req.headers["user-agent"] || "unknown",
+      });
 
       await user.save();
 
@@ -212,6 +223,9 @@ export const refreshToken = asyncHandler(
           success: true,
         });
     } catch (error) {
+      if (error instanceof ErrorResponse) {
+        throw error;
+      }
       throw new ErrorResponse("Invalid refresh token", 401);
     }
   },

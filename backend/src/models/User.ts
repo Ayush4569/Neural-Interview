@@ -23,7 +23,7 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
-    email: { type: String, unique: true },
+    email: { type: String, unique: true, sparse: true },
     username: { type: String, lowercase: true, trim: true },
     password: { type: String },
     interviewCount: { type: Number, default: 0 },
@@ -44,6 +44,12 @@ UserSchema.pre("save", async function () {
     return;
   }
   this.password = await bcrypt.hash(this.password, 10);
+});
+
+UserSchema.pre("save", async function () {
+  if (this.refreshTokens && this.refreshTokens.length > 5) {
+    this.refreshTokens = this.refreshTokens.slice(-5) as refreshToken[];
+  } else return;
 });
 
 UserSchema.methods.matchPassword = async function (enteredPassword: string) {

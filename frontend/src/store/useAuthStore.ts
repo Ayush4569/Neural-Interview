@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 interface User {
   _id: string;
+  username : string
   email: string;
   isGhost: boolean;
   interviewCount: number;
@@ -16,6 +17,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  
   isAuthenticated: false,
   setUser: (user) => set({ user, isAuthenticated: true }),
   clearUser: () => set({ user: null, isAuthenticated: false }),

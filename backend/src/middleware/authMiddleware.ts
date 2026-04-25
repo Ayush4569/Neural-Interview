@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { type Request, type Response, type NextFunction } from 'express';
-import User from '../models/User.js';
+import {User} from '../models/User.js';
 import ErrorResponse from '../utils/errorResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
