@@ -24,4 +24,7 @@ export const setupInterviewSchema = z.object({
   techStack: z.string().min(2, "Please enter your tech stack"),
   experienceLevel: z.enum(["0-1", "1-3", "3-5", "5+"]),
   duration: z.string(),
+  scheduledAt: z.iso.datetime({ error: "Please enter a valid date and time" }),
+  optionalPrompt: z.string().optional(),
+  mode: z.enum(["now", "schedule"],"Please select a mode"),
 });

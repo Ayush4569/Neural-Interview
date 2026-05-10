@@ -11,6 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import api from "@/lib/api";
 import { setupInterviewSchema } from "@/schemas";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -19,11 +28,19 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+import { useEffect, useState } from "react";
 
 type Formvalues = z.infer<typeof setupInterviewSchema>;
+
+const now = new Date();
+const timeInHHMM = now.toTimeString().slice(0, 5);
+const MIN_BUFFER_MINUTES = 5;
 export default function SetupPage() {
+  const [date, setDate] = useState<Date>(now);
+  const [time, setTime] = useState<string>(timeInHHMM);
   const router = useRouter();
   const isUser = useAuthStore((state) => state.isAuthenticated);
+
   const {
     register,
     handleSubmit,
@@ -35,35 +52,72 @@ export default function SetupPage() {
     defaultValues: {
       experienceLevel: "0-1",
       duration: "3",
+      scheduledAt: new Date().toISOString(),
+      optionalPrompt: "",
+      mode: "schedule",
     },
   });
+  const experience = watch("experienceLevel");
+  const mode = watch("mode");
 
   const onSubmit = async (data: Formvalues) => {
+    const currentTime = new Date();
+    if (mode === "schedule" && new Date(data.scheduledAt) < currentTime) {
+      toast.error("Cannot schedule in the past");
+      return;
+    }
+
+    if (
+      mode === "schedule" &&
+      new Date(data.scheduledAt).getTime() - currentTime.getTime() <
+        MIN_BUFFER_MINUTES * 60 * 1000
+    ) {
+      toast.error(`Schedule at least ${MIN_BUFFER_MINUTES} minutes ahead`);
+      return;
+    }
     const payload = {
       ...data,
       techStack: data.techStack.split(",").map((item) => item.trim()),
-      duration: parseInt(data.duration, 10),
+      duration: parseInt(data.duration),
+      ...(mode === "now" && { scheduledAt: currentTime.toISOString() }),
+      mode
     };
-    try {
-      // const res = await api.post("/interviews", payload);
-      toast.success("Interview created successfully");
-      // console.log('payloa');
 
-      // router.push(`/interview/${res.data.interview._id}`);
+
+    try {
+      const res = await api.post("/interviews", payload);
+      toast.success("Interview created successfully");
+      router.push(`/testing/${res.data.interviewId}`);
     } catch (error) {
-      toast.error("Failed to setup interview. Please try again.");
+      
     }
   };
+
+  useEffect(() => {
+    if (!date || !time || mode !== "schedule") return;
+    const scheduledDate = new Date(
+      `${format(date, "yyyy-MM-dd")}T${time}`,
+    ).toISOString();
+    setValue("scheduledAt", scheduledDate);
+  }, [date, time,setValue,mode]);
+
+  useEffect(() => {
+    if (mode === "now") {
+      setValue("scheduledAt", new Date().toISOString());
+    }
+  }, [mode,setValue]);
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] px-4 bg-[#0F1115] py-12">
       <div className="w-full max-w-xl space-y-8">
         {/* Header */}
         <div className="space-y-2 relative">
-          <span
-            className={`${!isUser ? "absolute" : "hidden"} -top-6 right-0 text-xs font-bold px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full`}
-          >
-            Ghost mode
-          </span>
+          {!isUser && (
+            <span
+              className={`absolute -top-6 right-0 text-xs font-bold px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full`}
+            >
+              Ghost mode
+            </span>
+          )}
 
           <h1 className="text-3xl font-semibold tracking-tight text-white">
             Configure Your Interview
@@ -114,14 +168,14 @@ export default function SetupPage() {
             </div>
 
             {/* Experience Level */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="text-xs font-semibold text-gray-300">
-                Experience Level
+                Experience Level (Year)
               </Label>
 
               <RadioGroup
                 defaultValue="0-1"
-                value={watch("experienceLevel")}
+                value={experience}
                 onValueChange={(value) => setValue("experienceLevel", value)}
                 className="grid grid-cols-2 sm:grid-cols-4 gap-4"
               >
@@ -130,7 +184,7 @@ export default function SetupPage() {
                     key={level}
                     htmlFor={level}
                     className={`flex items-center justify-center p-3 rounded-xl border cursor-pointer transition-colors w-full ${
-                      watch("experienceLevel") === level
+                      experience === level
                         ? "border-purple-500 bg-purple-500/10"
                         : "border-gray-800 bg-[#0F1115] hover:border-gray-600"
                     }`}
@@ -168,14 +222,95 @@ export default function SetupPage() {
                 </SelectTrigger>
 
                 <SelectContent className="bg-[#161920] border-gray-800 text-white">
-                  <SelectItem value="3 Mins">3 Minutes</SelectItem>
-                  <SelectItem value="5 Mins">5 Minutes</SelectItem>
-                  <SelectItem value="10 Mins">10 Minutes</SelectItem>
+                  <SelectItem value="3">3 Minutes</SelectItem>
+                  <SelectItem value="5">5 Minutes</SelectItem>
+                  <SelectItem value="10">10 Minutes</SelectItem>
                 </SelectContent>
               </Select>
               {errors.duration && (
                 <p className="text-xs text-red-500">
                   {errors.duration.message}
+                </p>
+              )}
+            </div>
+
+            {/* Date and time */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-gray-300">
+                Date and time
+              </Label>
+
+              <RadioGroup
+                defaultValue="schedule"
+                onValueChange={(v) => setValue("mode", v)}
+                className="flex gap-x-4 mb-4 cursor-pointer"
+              >
+                <div className="flex items-center gap-x-2">
+                  <RadioGroupItem value="now" id="now" />
+                  <Label htmlFor="now">Start Now</Label>
+                </div>
+
+                <div className="flex items-center gap-x-2">
+                  <RadioGroupItem value="schedule" id="schedule" />
+                  <Label htmlFor="schedule">Schedule for later</Label>
+                </div>
+              </RadioGroup>
+
+              {mode === "schedule" && (
+                <>
+                  <Popover>
+                    <PopoverTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          data-empty={!date}
+                          className="justify-start text-left font-normal data-[empty=true]:text-muted-foreground h-12"
+                        />
+                      }
+                    >
+                      <CalendarIcon />
+                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        required
+                        disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full h-12 px-3 text-white placeholder-gray-400 bg-gray-900 border border-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </>
+              )}
+
+              {errors.scheduledAt && (
+                <p className="text-xs text-red-500">
+                  {errors.scheduledAt.message}
+                </p>
+              )}
+            </div>
+
+            {/* Optional prompt */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-gray-300">
+                Optional prompt (Tell about job desc or focusing on specific
+                topic)
+              </Label>
+              <Input
+                placeholder="Add specific instructions for the interviewer"
+                className="bg-[#0F1115] border-gray-800 text-white h-12"
+                {...register("optionalPrompt")}
+              />
+              {errors.optionalPrompt && (
+                <p className="text-xs text-red-500">
+                  {errors.optionalPrompt.message}
                 </p>
               )}
             </div>
@@ -189,7 +324,7 @@ export default function SetupPage() {
               >
                 {isSubmitting
                   ? "Creating Interview..."
-                  : "Start Interview Immediately"}
+                  : mode === "now" ? "Start Interview Immediately" : "Schedule Interview"}
               </Button>
             </div>
           </form>

@@ -1,20 +1,18 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 dotenv.config({path:'./.env'});
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export const generateInterviewQuestion = async (
   jobTitle: string,
   techStack: string[],
   experienceLevel: string,
-  transcript: { role: string; content: string }[],
-  isEnding: boolean = false
+  transcript: { role: string; text: string }[]
 ) => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const context = transcript
-    .map((t) => `${t.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${t.content}`)
+    .map((t) => `${t.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${t.text}`)
     .join('\n');
 
   let prompt = `
@@ -28,29 +26,25 @@ export const generateInterviewQuestion = async (
     - The interview MUST start with the candidate introducing themselves. Ask specifically for their name and a brief professional background before diving into technical questions.
     - If the user has introducted themselves, proceed to technical evaluation and ask a follow-up or a new question.
     - Do not provide the answer to your own questions unless asked for feedback.
-  `;
 
-  if (isEnding) {
-    return "Alright it was great but since we dont have much time left its time to conclude, good luck for your future, you will get the evaluation of the interview uptil now.";
-  }
-
-  prompt += `
-    Transcript so far:
-    ${context}
+    ${context ? `Transcript so far:\n${context}` : ""}
 
     Next Interviewer response:
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  return response.text();
+  const result = await genAI.models.generateContent({
+    model:"gemini-2.5-flash",
+    contents: prompt,
+  });
+  const response = result.text?.trim();
+  if(!response) throw new Error("Failed to generate response");
+  return response as string;
 };
 
-export const evaluateInterview = async (transcript: { role: string; content: string }[]) => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+export const evaluateInterview = async (transcript: { role: string; text: string }[]) => {
 
   const fullTranscript = transcript
-    .map((t) => `${t.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${t.content}`)
+    .map((t) => `${t.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${t.text}`)
     .join('\n');
 
   const prompt = `
@@ -70,10 +64,14 @@ export const evaluateInterview = async (transcript: { role: string; content: str
     ${fullTranscript}
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
+  const result = await genAI.models.generateContent({
+    model:"gemini-2.5-flash",
+    contents: prompt,
+  });
+  const response = result.text;
+  if(!response) throw new Error("Failed to generate response");
   try {
-    const text = response.text();
+    const text = result.text;
     // Clean potential markdown or extra characters
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const start = jsonStr.indexOf('{');

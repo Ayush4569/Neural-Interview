@@ -53,14 +53,17 @@ export const ghostLogin = asyncHandler(
       isGhost: true,
       interviewCount: 0,
     });
-    await sendTokenResponse(user, 201, res,req.headers["user-agent"] || "unknown");
+    const device = req.body.device || req.headers["user-agent"] || "unknown";
+    await sendTokenResponse(user, 201, res, device);
   },
 );
 
 export const register = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password,device } = req.body;
-    if([email, password,device].some(field => !field)) {
+    const { email, password } = req.body;
+    const device = req.body.device || req.headers["user-agent"] || "unknown";
+    
+    if (!email || !password) {
       throw new ErrorResponse("Please provide an email and password", 400);
     }
     const existingUser = await User.findOne({ email });
@@ -74,15 +77,16 @@ export const register = asyncHandler(
       isGhost: false,
     });
 
-    await sendTokenResponse(user, 201, res,device);
+    await sendTokenResponse(user, 201, res, device);
   },
 );
 
 export const login = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password ,device} = req.body;
+    const { email, password } = req.body;
+    const device = req.body.device || req.headers["user-agent"] || "unknown";
 
-    if ([email, password,device].some(field => !field)) {
+    if (!email || !password) {
       throw new ErrorResponse("Please provide an email and password", 400);
     }
 
@@ -96,7 +100,7 @@ export const login = asyncHandler(
       throw new ErrorResponse("Invalid password", 401);
     }
 
-    await sendTokenResponse(user, 200, res,device);
+    await sendTokenResponse(user, 200, res, device);
   },
 );
 
@@ -207,10 +211,12 @@ export const refreshToken = asyncHandler(
       const newRefreshToken = generateRefreshToken(user._id, user.isGhost);
 
       const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+      const device = req.body.device || req.headers["user-agent"] || "unknown";
+      
       user.refreshTokens.push({
         token: hashedRefreshToken,
         createdAt: new Date(),
-        device: req.headers["user-agent"] || "unknown",
+        device,
       });
 
       await user.save();

@@ -35,6 +35,8 @@ export default function Login() {
       setUser(res.data.user);
       router.push('/myinterviews');
     } catch (error: unknown) {
+      console.log('login',error);
+      
       // API interceptor handles the error toast
     } finally {
       setLoading(false);

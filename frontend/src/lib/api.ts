@@ -13,7 +13,11 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const message = error.response?.data?.message || error.message || 'An unexpected error occurred';
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || 
+                           originalRequest.url?.includes('/auth/register') ||
+                           originalRequest.url?.includes('/auth/guest');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       try {
         await axios.post(
@@ -36,7 +40,7 @@ api.interceptors.response.use(
         setTimeout(() => {
           if (typeof window !== 'undefined') window.location.href = '/register';
         }, 1500);
-    } else if (error.response?.status !== 401) {
+    } else if (error.response?.status !== 401 || isAuthEndpoint) {
         toast.error(message);
     }
     

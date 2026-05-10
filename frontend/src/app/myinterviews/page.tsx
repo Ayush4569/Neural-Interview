@@ -64,14 +64,14 @@ export default function MyInterviewsPage() {
                     <h3 className="text-xl font-medium">{interview.jobTitle || 'General Interview'}</h3>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       interview.status === 'completed' ? 'bg-green-500/10 text-green-400' :
-                      interview.status === 'pending' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-red-500/10 text-red-400'
+                      interview.status === 'scheduled' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-red-500/10 text-red-400'
                     }`}>
-                      {interview.status.toUpperCase()}
+                      {interview?.status?.toUpperCase()}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
                     <CalendarIcon className="h-4 w-4" />
-                    {format(new Date(interview.scheduledAt), 'MMM dd, yyyy - h:mm a')} • {interview.duration || 5} min session
+                    {format(new Date(interview.scheduledAt), 'MMM dd, yyyy - h:mm a')} • {interview.plannedDuration || 5} min session
                   </div>
                 </div>
 
@@ -86,8 +86,8 @@ export default function MyInterviewsPage() {
                   </Link>
                 )}
                 
-                {interview.status === 'pending' && (
-                  <Link href={`/interview/${interview._id}`}>
+                {interview.status === 'scheduled' && (
+                  <Link href={`/testing/${interview._id}`}>
                     <Button className="bg-indigo-600 hover:bg-indigo-700 text-white border-0 h-11 px-8 rounded-md">
                       Start Now <Zap className="ml-2 h-4 w-4" />
                     </Button>

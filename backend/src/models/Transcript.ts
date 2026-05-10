@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
 interface Messages {
-  role: "assistant" | "user";
+  role: "ai" | "user";
   text: string;
   createdAt: Date;
 }
@@ -20,10 +20,11 @@ const TranscriptSchema = new Schema<ITranscript>(
       type: Schema.Types.ObjectId,
       ref: "Interview",
       required: true,
+      unique: true
     },
     messages: [
       {
-        role: { type: String, enum: ["assistant", "user"], required: true },
+        role: { type: String, enum: ["ai", "user"], required: true },
         text: { type: String, required: true },
         createdAt: { type: Date, default: Date.now },
       },
