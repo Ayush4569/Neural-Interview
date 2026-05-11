@@ -10,6 +10,7 @@ interface Messages {
 interface ITranscript extends Document {
   interviewId: mongoose.Types.ObjectId;
   messages: Messages[];
+  isProcessing: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +30,7 @@ const TranscriptSchema = new Schema<ITranscript>(
         createdAt: { type: Date, default: Date.now },
       },
     ],
+    isProcessing: { type: Boolean, default: false },
   },
   {
     timestamps: true,

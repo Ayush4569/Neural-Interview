@@ -9,3 +9,5 @@ export const InterviewSchema = z.object({
   optionalPrompt: z.string().optional(),
   mode: z.enum(["now", "schedule"]),
 });
+
+export const QuestionResponseSchema = z.string().min(1,"Answer cannot be empty")
