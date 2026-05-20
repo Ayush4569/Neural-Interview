@@ -40,7 +40,7 @@ export function Navbar() {
               <Zap className="h-5 w-5 text-indigo-400" />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">
-              PrepWise
+              Neural Interview
             </span>
           </Link>
 

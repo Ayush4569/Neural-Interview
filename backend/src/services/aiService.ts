@@ -13,10 +13,11 @@ const handleAIError = (error: any) => {
     error?.status === 429 ||
     message.includes("quota") ||
     message.includes("rate limit") ||
-    message.includes("429")
+    message.includes("429") ||
+    message.includes("exhausted")
   ) {
     throw new ErrorResponse(
-      "AI service rate limit exceeded. Please wait a moment and try again.",
+      "Rate limit exceeded. Gemini is currently busy, please try again in a moment.",
       429,
     );
   }
@@ -24,14 +25,38 @@ const handleAIError = (error: any) => {
     message.includes("fetch failed") ||
     message.includes("network") ||
     message.includes("timeout") ||
-    message.includes("503")
+    message.includes("503") ||
+    message.includes("overloaded") ||
+    message.includes("high demand")
   ) {
     throw new ErrorResponse(
-      "AI network error. Please check your connection or try again.",
+      "Gemini AI is temporarily overloaded. Please try again shortly.",
       503,
     );
   }
   throw new ErrorResponse("AI Service is currently unavailable.", 500);
+};
+
+const generateWithFallback = async (prompt: string) => {
+  try {
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    return result.text || "";
+  } catch (error: any) {
+    console.warn("Primary model failed, attempting fallback to gemini-2.5-flash-lite...");
+    try {
+      const fallbackResult = await genAI.models.generateContent({
+        model: "gemini-2.5-flash-lite",
+        contents: prompt,
+      });
+      return fallbackResult.text || "";
+    } catch (fallbackError: any) {
+      if (fallbackError instanceof ErrorResponse) throw fallbackError;
+      return handleAIError(fallbackError);
+    }
+  }
 };
 
 export const generateInterviewQuestion = async (
@@ -71,14 +96,11 @@ ${previousQuestions ? `    - IMPORTANT: Do not repeat any of the following previ
   `;
 
   try {
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-    const response = result.text?.trim();
-    if (!response)
+    const response = await generateWithFallback(prompt);
+    const trimmed = typeof response === "string" ? response.trim() : "";
+    if (!trimmed)
       throw new ErrorResponse("AI returned an empty response.", 500);
-    return response as string;
+    return trimmed;
   } catch (error) {
     if (error instanceof ErrorResponse) throw error;
     return handleAIError(error);
@@ -111,12 +133,8 @@ export const evaluateInterview = async (
 
   let text = "";
   try {
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-    text = result.text || "";
-    if (!text) throw new ErrorResponse("AI returned an empty response.", 500);
+    text = await generateWithFallback(prompt);
+    if (!text || typeof text !== "string") throw new ErrorResponse("AI returned an empty response.", 500);
   } catch (error) {
     if (error instanceof ErrorResponse) throw error;
     handleAIError(error);

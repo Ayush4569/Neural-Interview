@@ -113,6 +113,26 @@ export default function PreJoinPanel({ interviewId }: PreJoinPanelProps) {
     );
   }
 
+  let isExpired = interview.status === "expired" || interview.status === "completed";
+  
+  if (interview.status === "scheduled") {
+      const now = new Date();
+      const scheduledAt = new Date(interview.scheduledAt);
+      const graceTime = 30 * 60 * 1000;
+      if (now.getTime() - scheduledAt.getTime() > graceTime) {
+          isExpired = true;
+      }
+  } else if (interview.status === "live" && interview.startTime) {
+      const now = new Date();
+      const startTime = new Date(interview.startTime);
+      const durationMs = interview.plannedDuration * 60 * 1000;
+      if (now.getTime() > startTime.getTime() + durationMs) {
+          isExpired = true;
+      }
+  }
+
+  const canJoin = micAllowed && !isExpired;
+
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4 py-8">
       {/* Main Card */}
@@ -128,9 +148,15 @@ export default function PreJoinPanel({ interviewId }: PreJoinPanelProps) {
           </div>
 
           {/* Status Badge */}
-          <div className="rounded-full bg-emerald-500/20 px-3 py-1 text-sm font-medium text-emerald-400">
-            Pre-check
-          </div>
+          {isExpired ? (
+            <div className="rounded-full bg-red-500/20 px-3 py-1 text-sm font-medium text-red-400">
+              Expired
+            </div>
+          ) : (
+            <div className="rounded-full bg-emerald-500/20 px-3 py-1 text-sm font-medium text-emerald-400">
+              Pre-check
+            </div>
+          )}
         </div>
 
         {/* Divider */}
@@ -213,8 +239,11 @@ export default function PreJoinPanel({ interviewId }: PreJoinPanelProps) {
             <div className="h-3 w-full overflow-hidden rounded-full bg-zinc-800">
               {/* Meter Fill */}
               <div
-                className="h-full rounded-full bg-linear-to-r from-indigo-500 to-pink-500 transition-all duration-75"
-                style={{ width: `${micEnabled ? volume : 0}%` }}
+                className="h-full rounded-full transition-all duration-75"
+                style={{
+                  width: `${micEnabled ? volume : 0}%`,
+                  background: 'linear-gradient(to right, #6366f1, #ec4899)',
+                }}
               />
             </div>
 
@@ -251,10 +280,16 @@ export default function PreJoinPanel({ interviewId }: PreJoinPanelProps) {
         <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Status */}
           <div className="flex items-center gap-2 text-sm text-zinc-400">
-            <CheckCircle2
-              className={`h-4 w-4 ${micAllowed ? "text-emerald-500" : "text-red-500"}`}
-            />
-            {micAllowed ? "All checks passed" : "Allow mic to proceed"}
+            {isExpired ? (
+              <span className="text-red-500">Interview is no longer available</span>
+            ) : (
+              <>
+                <CheckCircle2
+                  className={`h-4 w-4 ${micAllowed ? "text-emerald-500" : "text-red-500"}`}
+                />
+                {micAllowed ? "All checks passed" : "Allow mic to proceed"}
+              </>
+            )}
           </div>
 
           {/* Buttons */}
@@ -269,7 +304,7 @@ export default function PreJoinPanel({ interviewId }: PreJoinPanelProps) {
 
             {/* Join Button */}
             <button
-              disabled={!micAllowed}
+              disabled={!canJoin}
               onClick={() => router.push(`/interview/${interviewId}`)}
               className="rounded-lg bg-linear-to-r from-indigo-500 to-pink-500 px-5 py-2.5 font-semibold text-black hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >

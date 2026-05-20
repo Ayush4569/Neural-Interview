@@ -41,7 +41,10 @@ api.interceptors.response.use(
           if (typeof window !== 'undefined') window.location.href = '/register';
         }, 1500);
     } else if (error.response?.status !== 401 || isAuthEndpoint) {
-        toast.error(message);
+        const isStartRoute429 = originalRequest.url?.includes('/start') && error.response?.status === 429;
+        if (!isStartRoute429) {
+            toast.error(message);
+        }
     }
     
     return Promise.reject(error);

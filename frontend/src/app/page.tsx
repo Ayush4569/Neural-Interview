@@ -37,7 +37,7 @@ export default function Home() {
       };
       
       const res = await api.post('/interviews', payload);
-      router.push(`/interview/${res.data.interview._id}`);
+      router.push(`/interview/${res.data.interview._id}/lobby`);
     } catch (error: unknown) {
       toast.error("Failed to start quick interview. Please try logging in.");
       setStartingInterview(null);
@@ -96,12 +96,12 @@ export default function Home() {
               <p className="text-gray-400">Click a card to immediately jump into a mock interview session.</p>
             </div>
             
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
               {RECOMMENDED_TEMPLATES.map((template: Template) => (
                 <div 
                   key={template.id} 
                   onClick={() => handleQuickStart(template)}
-                  className="flex flex-col space-y-4 p-6 bg-[#161920] rounded-2xl border border-gray-800 hover:border-purple-500/50 hover:shadow-[0_0_30px_-10px_rgba(168,85,247,0.3)] transition-all cursor-pointer group"
+                  className="flex flex-col space-y-4 p-6 bg-[#161920] rounded-2xl border border-gray-800 hover:border-purple-500/50 hover:shadow-[0_0_30px_-10px_rgba(168,85,247,0.3)] transition-all cursor-pointer group min-h-[200px]"
                 >
                   <div className="flex justify-between items-start">
                     <div className="p-3 bg-gray-800/50 rounded-xl group-hover:bg-gray-800 transition-colors">

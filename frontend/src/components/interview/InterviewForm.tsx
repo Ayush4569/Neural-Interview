@@ -87,7 +87,11 @@ export default function SetupPage() {
     try {
       const res = await api.post("/interviews", payload);
       toast.success("Interview created successfully");
-      router.push(`/testing/${res.data.interviewId}`);
+      if (mode === "schedule") {
+        router.push("/myinterviews");
+      } else {
+        router.push(`/interview/${res.data.interviewId}/lobby`);
+      }
     } catch (error) {
       
     }

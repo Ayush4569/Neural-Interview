@@ -3,12 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ReactNode, useState } from 'react';
-import { useUser } from '@/hooks/useUser';
-
-function AuthInitializer({ children }: { children: ReactNode }) {
-  useUser();
-  return <>{children}</>;
-}
+import { AuthGuard } from '@/components/AuthGuard';
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -26,7 +21,7 @@ export default function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthInitializer>{children}</AuthInitializer>
+      <AuthGuard>{children}</AuthGuard>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

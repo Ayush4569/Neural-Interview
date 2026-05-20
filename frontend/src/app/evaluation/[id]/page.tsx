@@ -1,36 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import api from '@/lib/api';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, Zap, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft, RotateCcw, Zap, Target, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 import { useGetEvaluation } from '@/hooks/useGetEvaluation';
 
 export default function EvaluationPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
-  
-  const { data: evaluation, isPending, error } = useGetEvaluation(id);
+
+  const { data, isPending, error } = useGetEvaluation(id);
+  const evaluation = data?.evaluation;
+  const interview = data?.interview;
 
   if (isPending) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-[#0F1115]">
-        <Loader2 className="h-10 w-10 animate-spin text-purple-500 mb-4" />
-        <p className="text-gray-400">Loading your comprehensive evaluation...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0A0F]">
+        <Loader2 className="h-12 w-12 animate-spin text-purple-500 mb-4" />
+        <p className="text-gray-400 text-lg">Generating your evaluation...</p>
+        <p className="text-gray-600 text-sm mt-2">This may take a few seconds</p>
       </div>
     );
   }
 
   if (error || !evaluation) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-[#0F1115] text-white p-6 text-center">
-        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Evaluation Not Found</h2>
-        <p className="text-gray-400 mb-6 max-w-md">We couldn't retrieve the feedback for this session. It may still be processing or the session is invalid.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0A0A0F] text-white p-6 text-center">
+        <AlertCircle className="h-14 w-14 text-red-500 mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Evaluation Not Available</h2>
+        <p className="text-gray-400 mb-8 max-w-md">
+          We couldn't load the feedback for this session. It may still be processing or the interview is not yet completed.
+        </p>
         <Link href="/myinterviews">
-          <Button variant="outline" className="bg-[#161920] border-gray-800 text-white hover:bg-[#1A1D24]">
+          <Button variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
           </Button>
         </Link>
@@ -38,99 +43,168 @@ export default function EvaluationPage() {
     );
   }
 
+  const score = evaluation.score ?? 0;
+  const scoreColor =
+    score >= 75 ? 'text-green-400' :
+    score >= 50 ? 'text-yellow-400' :
+    'text-red-400';
+
+  const circumference = 2 * Math.PI * 54;
+  const dashOffset = circumference - (circumference * score) / 100;
+
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#0F1115] text-white py-12 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto flex flex-col gap-6">
-        
-        {/* Header Action */}
-        <div className="flex items-center gap-4 mb-2">
-          <Link href="/myinterviews">
-             <Button variant="ghost" className="text-gray-400 hover:text-white p-0 h-auto hover:bg-transparent">
-               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-             </Button>
-          </Link>
+    <div className="min-h-screen bg-[#0A0A0F] text-white">
+      {/* Top navigation */}
+      <div className="max-w-4xl mx-auto px-4 pt-8 pb-2">
+        <button
+          onClick={() => router.push('/myinterviews')}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to dashboard
+        </button>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 pb-20">
+
+        {/* ───── HEADER ───── */}
+        <div className="text-center py-10 border-b border-gray-800">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">
+            Feedback on the Interview —{' '}
+            <span className="text-purple-400">{interview?.jobTitle || 'Interview'}</span>
+          </h1>
+          <div className="flex items-center justify-center gap-6 text-gray-400 text-sm mt-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-purple-400" />
+              <span>
+                Overall Impression:{' '}
+                <span className={`font-bold text-base ${scoreColor}`}>{score}</span>
+                <span className="text-gray-500">/100</span>
+              </span>
+            </div>
+            {interview?.scheduledAt && (
+              <div className="flex items-center gap-2">
+                <span>📅</span>
+                <span>{format(new Date(interview.scheduledAt), 'MMM dd, yyyy - h:mm a')}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="bg-[#161920] rounded-3xl border border-gray-800 p-8 md:p-12 shadow-2xl">
-          
-          <div className="mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">Interview Evaluation</h1>
-            <p className="text-gray-400">Detailed breakdown of your session performance</p>
-          </div>
-
-          {/* Overall Dashboard Hero */}
-          <div className="flex flex-col md:flex-row items-center gap-8 mb-12 p-8 bg-[#0F1115] rounded-3xl border border-gray-800">
-            {/* Score Ring */}
-            <div className="relative flex items-center justify-center shrink-0">
-               <svg className="w-40 h-40 transform -rotate-90">
-                 <circle cx="80" cy="80" r="72" className="stroke-gray-800" strokeWidth="14" fill="none" />
-                 <circle 
-                   cx="80" cy="80" r="72" 
-                   className="stroke-purple-500 outline-none transition-all duration-1000 ease-out" 
-                   strokeWidth="14" fill="none" 
-                   strokeDasharray="452.389" 
-                   strokeDashoffset={452.389 - (452.389 * (evaluation.score || 0)) / 100} 
-                   strokeLinecap="round" 
-                 />
-               </svg>
-               <div className="absolute flex flex-col items-center justify-center">
-                 <span className="text-4xl font-bold">{evaluation.score}</span>
-                 <span className="text-sm text-gray-500 font-semibold">/ 100</span>
-               </div>
-            </div>
-            <div className="flex-1 space-y-4 text-center md:text-left">
-              <h3 className="text-2xl font-semibold">Overall Impression</h3>
-              <p className="text-gray-300 leading-relaxed text-lg">
-                {evaluation.feedback}
-              </p>
+        {/* ───── SCORE + SUMMARY ───── */}
+        <div className="flex flex-col md:flex-row items-center gap-10 py-10 border-b border-gray-800">
+          {/* SVG ring */}
+          <div className="relative shrink-0">
+            <svg width="140" height="140" className="-rotate-90">
+              <circle cx="70" cy="70" r="54" fill="none" stroke="#1f2937" strokeWidth="12" />
+              <circle
+                cx="70" cy="70" r="54"
+                fill="none"
+                stroke={score >= 75 ? '#22c55e' : score >= 50 ? '#eab308' : '#ef4444'}
+                strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                style={{ transition: 'stroke-dashoffset 1s ease' }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className={`text-3xl font-bold ${scoreColor}`}>{score}</span>
+              <span className="text-xs text-gray-500 font-semibold">/ 100</span>
             </div>
           </div>
 
-          {/* Breakdown Grids */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-             <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-8">
-                <h4 className="text-xl font-semibold text-green-400 mb-6 flex items-center gap-2">
-                  <Zap className="h-6 w-6" /> Key Strengths
-                </h4>
-                <ul className="space-y-4">
-                  {evaluation.strengths?.map((item: string, i: number) => (
-                    <li key={i} className="text-gray-300 text-base flex gap-3 items-start"><span className="text-green-500 mt-1">•</span> <span className="flex-1">{item}</span></li>
-                  ))}
-                </ul>
-             </div>
-             
-             <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8">
-                <h4 className="text-xl font-semibold text-red-400 mb-6 flex items-center gap-2">
-                  <AlertCircle className="h-6 w-6" /> Core Weaknesses
-                </h4>
-                <ul className="space-y-4">
-                  {evaluation.weaknesses?.map((item: string, i: number) => (
-                    <li key={i} className="text-gray-300 text-base flex gap-3 items-start"><span className="text-red-500 mt-1">•</span> <span className="flex-1">{item}</span></li>
-                  ))}
-                </ul>
-             </div>
+          <p className="text-gray-300 text-lg leading-relaxed text-center md:text-left">
+            {evaluation.feedback}
+          </p>
+        </div>
+
+        {/* ───── BREAKDOWN ───── */}
+        <div className="py-10 border-b border-gray-800">
+          <h2 className="text-2xl font-bold mb-8">Breakdown of Evaluation:</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Strengths */}
+            <div className="bg-[#0F1115] border border-gray-800 rounded-2xl p-6">
+              <h3 className="font-bold text-green-400 text-lg mb-4 flex items-center gap-2">
+                <Zap className="h-5 w-5" /> Strengths
+              </h3>
+              <ul className="space-y-3">
+                {evaluation.strengths?.map((item: string, i: number) => (
+                  <li key={i} className="flex gap-3 items-start text-gray-300">
+                    <span className="text-green-500 mt-0.5 shrink-0">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Weaknesses */}
+            <div className="bg-[#0F1115] border border-gray-800 rounded-2xl p-6">
+              <h3 className="font-bold text-red-400 text-lg mb-4 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" /> Areas to Improve
+              </h3>
+              <ul className="space-y-3">
+                {evaluation.weaknesses?.map((item: string, i: number) => (
+                  <li key={i} className="flex gap-3 items-start text-gray-300">
+                    <span className="text-red-500 mt-0.5 shrink-0">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* ───── FINAL VERDICT ───── */}
+        <div className="py-10 border-b border-gray-800">
+          <div className="flex items-center gap-4 mb-6 flex-wrap">
+            <h2 className="text-2xl font-bold">Final Verdict:</h2>
+            <span className={`px-4 py-1.5 rounded-full text-sm font-semibold border ${
+              score >= 75
+                ? 'bg-green-500/10 border-green-500/40 text-green-400'
+                : score >= 50
+                ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-400'
+                : 'bg-red-500/10 border-red-500/40 text-red-400'
+            }`}>
+              {score >= 75 ? 'Recommended' : score >= 50 ? 'Needs Improvement' : 'Not Recommended'}
+            </span>
           </div>
 
-          {/* Final Verdict / Improvements */}
-          <div className="bg-[#0F1115] border border-gray-800 rounded-2xl p-8 mb-10">
-            <h4 className="text-xl font-semibold mb-6 border-b border-gray-800 pb-4">Final Verdict & Next Steps</h4>
-            <ul className="space-y-4">
+          <div className="bg-[#0F1115] border border-gray-800 rounded-2xl p-6">
+            <h3 className="font-bold text-purple-400 text-lg mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" /> Next Steps & Improvements
+            </h3>
+            <ul className="space-y-3">
               {evaluation.improvements?.map((item: string, i: number) => (
-                <li key={i} className="text-gray-300 text-base flex gap-3 items-start"><span className="text-purple-500 mt-1">→</span> <span className="flex-1">{item}</span></li>
+                <li key={i} className="flex gap-3 items-start text-gray-300">
+                  <span className="text-purple-500 mt-0.5 shrink-0">→</span>
+                  <span>{item}</span>
+                </li>
               ))}
             </ul>
           </div>
-
-          {/* Bottom Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 mt-auto border-t border-gray-800 pt-8">
-            <Link href="/setup" className="flex-1">
-              <Button className="w-full h-14 text-lg bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium rounded-xl">
-                <RotateCcw className="mr-2 h-5 w-5" /> Retake Practice Interview
-              </Button>
-            </Link>
-          </div>
-
         </div>
+
+        {/* ───── ACTIONS ───── */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-10">
+          <Link href="/myinterviews" className="flex-1">
+            <Button
+              variant="outline"
+              className="w-full h-14 text-base border-gray-700 text-white hover:bg-gray-800 rounded-2xl"
+            >
+              <ArrowLeft className="mr-2 h-5 w-5" /> Back to dashboard
+            </Button>
+          </Link>
+          <Link href="/setup" className="flex-1">
+            <Button
+              className="w-full h-14 text-base bg-white text-black hover:bg-gray-100 font-semibold rounded-2xl"
+            >
+              <RotateCcw className="mr-2 h-5 w-5" /> Retake interview
+            </Button>
+          </Link>
+        </div>
+
       </div>
     </div>
   );
