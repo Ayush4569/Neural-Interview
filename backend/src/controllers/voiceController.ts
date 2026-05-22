@@ -9,7 +9,6 @@ export const getDeepgramToken = asyncHandler(async (req: Request, res: Response,
     }
     
 
-    // Get projects
     const projectsRes = await fetch("https://api.deepgram.com/v1/projects", {
         headers: { "Authorization": `Token ${deepgramApiKey}` }
     });
@@ -27,7 +26,6 @@ export const getDeepgramToken = asyncHandler(async (req: Request, res: Response,
 
     const projectId = projectsData.projects[0].project_id;
     
-    // Generate token
     const keyRes = await fetch(`https://api.deepgram.com/v1/projects/${projectId}/keys`, {
         method: "POST",
         headers: { 

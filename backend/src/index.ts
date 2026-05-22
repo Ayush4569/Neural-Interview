@@ -9,18 +9,14 @@ import {errorHandler} from './middleware/errorMiddleware.js';
 
 import cookieParser from 'cookie-parser';
 
-// Load env vars
 dotenv.config({path:'./.env'});
 
-// Connect to database
 connectDB();
 
-// Init Background Jobs
 initCleanupJob();
 
 const app: Application = express();
 
-// Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
@@ -28,13 +24,10 @@ app.use(cors({
   credentials: true
 }));
 
-// Routes
 app.use('/api/v1/user', authRoutes);
 app.use('/api/v1/interviews', interviewRoutes);
 
-// Error Handler
 
-// Basic Route
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'AI Interviewer is running...' });
 });

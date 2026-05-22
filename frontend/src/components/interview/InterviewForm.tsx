@@ -20,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import api from "@/lib/api";
+
 import { setupInterviewSchema } from "@/schemas";
 import { useAuthStore } from "@/store/useAuthStore";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 import { useEffect, useState } from "react";
+
+import { useCreateInterview } from "@/hooks/useInterviews";
 
 type Formvalues = z.infer<typeof setupInterviewSchema>;
 
@@ -40,6 +42,7 @@ export default function SetupPage() {
   const [time, setTime] = useState<string>(timeInHHMM);
   const router = useRouter();
   const isUser = useAuthStore((state) => state.isAuthenticated);
+  const { mutateAsync: createInterview } = useCreateInterview();
 
   const {
     register,
@@ -85,14 +88,16 @@ export default function SetupPage() {
 
 
     try {
-      const res = await api.post("/interviews", payload);
+      const data = await createInterview(payload);
       toast.success("Interview created successfully");
+      
       if (mode === "schedule") {
         router.push("/myinterviews");
       } else {
-        router.push(`/interview/${res.data.interviewId}/lobby`);
+        router.push(`/interview/${data.interviewId}/lobby`);
       }
-    } catch (error) {
+    } catch {
+      // handled by global axios interceptor 
       
     }
   };

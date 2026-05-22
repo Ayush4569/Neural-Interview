@@ -65,13 +65,11 @@ export const generateInterviewQuestion = async (
   experienceLevel: string,
   transcript: { role: string; text: string }[],
 ) => {
-  // 1. Question Anchoring: Extract all previous AI questions to prevent repetition
   const previousQuestions = transcript
     .filter((t) => t.role === "ai")
     .map((t) => `- ${t.text}`)
     .join("\n");
 
-  // 2. Sliding Window: Keep only the most recent 6 messages (3 turns) for immediate context
   const MAX_RECENT_MESSAGES = 6;
   const recentTranscript = transcript
     .slice(-MAX_RECENT_MESSAGES)
@@ -141,7 +139,6 @@ export const evaluateInterview = async (
   }
 
   try {
-    // Clean potential markdown or extra characters
     const jsonStr = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -156,7 +153,6 @@ export const evaluateInterview = async (
     return JSON.parse(jsonStr.substring(start, end + 1));
   } catch (error) {
     console.error("Failed to parse AI evaluation JSON:", error);
-    // Fallback evaluation object
     return {
       score: 50,
       feedback:

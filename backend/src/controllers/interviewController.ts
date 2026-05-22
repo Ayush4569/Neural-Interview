@@ -70,8 +70,7 @@ export const createInterview = asyncHandler(
     return res.status(200).json({
       success: true,
       interviewId: interview._id,
-      status: interview.status,
-      scheduledAt: interview.scheduledAt,
+      interview
     });
   },
 );
@@ -126,7 +125,6 @@ export const startInterview = asyncHandler(
       }
     }
 
-    // Ensure the transcript exists
     let transcript = await Transcript.findOneAndUpdate(
       { interviewId: interview._id },
       {
@@ -159,7 +157,6 @@ export const startInterview = asyncHandler(
       });
     }
 
-    // Need to generate initial question. Acquire optimistic lock.
     const lockedTranscript = await Transcript.findOneAndUpdate(
       { _id: transcript._id, isProcessing: { $ne: true } },
       { $set: { isProcessing: true } },
@@ -286,7 +283,6 @@ export const submitAnswer = asyncHandler(
       throw new ErrorResponse("Answer cannot be empty", 400);
     }
 
-    // Attempt to acquire optimistic lock on the transcript
     const transcript = await Transcript.findOneAndUpdate(
       { interviewId: interview._id, isProcessing: { $ne: true } },
       { $set: { isProcessing: true } },
@@ -334,7 +330,6 @@ export const submitAnswer = asyncHandler(
         });
       }
 
-      // Prepare context with user's answer appended in memory
       const memoryMessages = [...transcript.messages, userMessage];
 
       let nextQuestion = "";
@@ -361,7 +356,6 @@ export const submitAnswer = asyncHandler(
           );
           if (error instanceof ErrorResponse) {
             aiErrorMsg = error.message;
-            // Break immediately on rate limit to avoid spamming
             if (error.statusCode === 429 || retries === 0) {
               retries = -1; // ensure loop exits
               break;
@@ -375,7 +369,6 @@ export const submitAnswer = asyncHandler(
       }
 
       if (!nextQuestion || nextQuestion.length === 0) {
-        // Abort the interview if all retries fail
         interview.status = "failed";
         interview.errorReason = aiErrorMsg;
         interview.endTime = new Date();
@@ -397,7 +390,6 @@ export const submitAnswer = asyncHandler(
         createdAt: new Date(),
       };
 
-      // Atomic update of both messages
       await Transcript.findByIdAndUpdate(transcript._id, {
         $push: { messages: { $each: [userMessage, aiMessage] } },
       });
@@ -408,7 +400,6 @@ export const submitAnswer = asyncHandler(
         nextQuestion,
       });
     } finally {
-      // Always release the lock
       await Transcript.findByIdAndUpdate(transcript._id, {
         $set: { isProcessing: false },
       });

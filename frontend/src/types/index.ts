@@ -37,7 +37,7 @@ export interface Template {
   id: string;
   jobTitle: string;
   techStack: string;
-  experienceLevel: string;
+  experienceLevel: "0-1" | "1-3" | "3-5" | "5+" ;
   duration: number;
   icon?: React.ReactNode; 
 }

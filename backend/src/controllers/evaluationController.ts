@@ -13,7 +13,6 @@ export const getEvaluation = asyncHandler(async (req: Request, res: Response, ne
 
     const { id } = req.params;
 
-    // Verify ownership
     const interview = await Interview.findOne({ _id: id as string, userId: req.user.id as string });
     if (!interview) {
         throw new ErrorResponse('Interview not found', 404);
@@ -23,7 +22,6 @@ export const getEvaluation = asyncHandler(async (req: Request, res: Response, ne
         throw new ErrorResponse('Interview is not yet completed', 400);
     }
 
-    // Check if evaluation already exists and is completed
     const existingEvaluation = await Evaluation.findOne({ interviewId: interview._id });
     if (existingEvaluation && existingEvaluation.status === 'completed') {
         return res.status(200).json({
@@ -43,7 +41,6 @@ export const getEvaluation = asyncHandler(async (req: Request, res: Response, ne
         throw new ErrorResponse('No transcript found for this interview', 404);
     }
 
-    // Set to processing
     await Evaluation.findOneAndUpdate(
         { interviewId: interview._id },
         { $set: { status: 'processing' } },
@@ -51,7 +48,6 @@ export const getEvaluation = asyncHandler(async (req: Request, res: Response, ne
     );
 
     try {
-        // Run AI evaluation
         const aiEvaluation = await evaluateInterview(transcript.messages);
 
         const savedEvaluation = await Evaluation.findOneAndUpdate(

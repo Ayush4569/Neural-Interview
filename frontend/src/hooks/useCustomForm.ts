@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { ZodType } from "zod";
 
-export const useCustomForm = <T extends Record<string, any>>(
+export const useCustomForm = <T extends Record<string, unknown>>(
   initialValues: T,
   schema: ZodType<T>,
 ) => {
   const [formState, setFormState] = useState<T>(initialValues);
-  const [errors, setErrors] = useState<Record<keyof T, string>>({} as any);
+  const [errors, setErrors] = useState<Record<keyof T, string>>({} as Record<keyof T, string>);
   
   const handleChange = (field: keyof T, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
@@ -34,7 +34,7 @@ export const useCustomForm = <T extends Record<string, any>>(
   };
 
   const handleSubmit =
-    (callback: Function) => (e: React.FormEvent<HTMLFormElement>) => {
+    (callback: (data: T) => void) => (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
       const isValid = validate();

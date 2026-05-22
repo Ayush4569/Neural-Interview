@@ -34,7 +34,7 @@ export default function Register() {
       toast.success("Account created successfully!");
       setUser(res.data.user);
       router.push('/myinterviews');
-    } catch (error: unknown) {
+    } catch {
       toast.error("Registration failed. Email might already exist.");
     } finally {
       setLoading(false);

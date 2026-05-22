@@ -11,34 +11,37 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { RECOMMENDED_TEMPLATES } from '@/constants';
 import { Template } from '@/types';
+import { useCreateInterview } from '@/hooks/useInterviews';
 
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const [startingInterview, setStartingInterview] = useState<string | null>(null);
+  const { mutateAsync: createInterview } = useCreateInterview();
 
   useUser();
 
   const handleQuickStart = async (template: Template) => {
     setStartingInterview(template.id);
     try {
-      // If not authenticated, fetch guest token first
       if (!isAuthenticated) {
         await api.post('/user/auth/guest');
       }
 
-      // Create the interview
       const payload = {
         jobTitle: template.jobTitle,
         techStack: template.techStack.split(',').map((s: string) => s.trim()),
         experienceLevel: template.experienceLevel,
         duration: template.duration,
         scheduledAt: new Date().toISOString(),
+        mode:"now" as const
       };
       
-      const res = await api.post('/interviews', payload);
-      router.push(`/interview/${res.data.interview._id}/lobby`);
+      const data = await createInterview(payload);
+      router.push(`/interview/${data.interviewId}/lobby`);
     } catch (error: unknown) {
+      console.log(error);
+      
       toast.error("Failed to start quick interview. Please try logging in.");
       setStartingInterview(null);
     }
@@ -96,12 +99,12 @@ export default function Home() {
               <p className="text-gray-400">Click a card to immediately jump into a mock interview session.</p>
             </div>
             
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto w-full">
               {RECOMMENDED_TEMPLATES.map((template: Template) => (
                 <div 
                   key={template.id} 
                   onClick={() => handleQuickStart(template)}
-                  className="flex flex-col space-y-4 p-6 bg-[#161920] rounded-2xl border border-gray-800 hover:border-purple-500/50 hover:shadow-[0_0_30px_-10px_rgba(168,85,247,0.3)] transition-all cursor-pointer group min-h-[200px]"
+                  className="flex flex-col h-full space-y-4 p-5 sm:p-6 bg-[#161920] rounded-2xl border border-gray-800 hover:border-purple-500/50 hover:shadow-[0_0_30px_-10px_rgba(168,85,247,0.3)] transition-all cursor-pointer group min-h-[180px] sm:min-h-[200px]"
                 >
                   <div className="flex justify-between items-start">
                     <div className="p-3 bg-gray-800/50 rounded-xl group-hover:bg-gray-800 transition-colors">
@@ -119,7 +122,7 @@ export default function Home() {
                   </div>
                   <div className="flex flex-wrap gap-2 mt-auto pt-4">
                     <span className="px-3 py-1 bg-[#0F1115] border border-gray-800 text-xs text-gray-300 rounded-full font-medium">
-                      {template.experienceLevel}
+                      {template.experienceLevel} years
                     </span>
                     <span className="px-3 py-1 bg-[#0F1115] border border-gray-800 text-xs text-gray-300 rounded-full font-medium flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {template.duration} mins

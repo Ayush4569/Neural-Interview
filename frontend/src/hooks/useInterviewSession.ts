@@ -1,6 +1,8 @@
+'use client'
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export type InterviewStatus = "connecting" | "idle" | "listening" | "processing" | "playing" | "failed" | "ending";
 
@@ -11,7 +13,7 @@ export function useInterviewSession(id: string) {
     const [transcript, setTranscript] = useState("");
     const [finalTranscript, setFinalTranscript] = useState("");
     const [isRecording, setIsRecording] = useState(false);
-    
+    const router = useRouter();
     const [deepgramToken, setDeepgramToken] = useState<string | null>(null);
     const socketRef = useRef<WebSocket | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -19,16 +21,13 @@ export function useInterviewSession(id: string) {
     const isSubmittingRef = useRef(false);
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const endInterview = async () => {
+    const endInterview = useCallback(async () => {
         try {
-            const { data } = await api.post(`/interviews/${id}/end`);
-            if(data.success){
-                toast.success("Interview ended successfully");
-            }
+            await api.post(`/interviews/${id}/end`);
         } catch (error) {
             console.error("Failed to end interview", error);
         }
-    };
+    }, [id]);
 
     const cleanupRecording = useCallback(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -59,7 +58,9 @@ export function useInterviewSession(id: string) {
             };
             
             utterance.onerror = (e) => {
-                console.error("TTS Error", e);
+                if (e.error !== "interrupted") {
+                    console.error("TTS Error", e);
+                }
                 setStatus("idle");
                 resolve();
             };
@@ -68,7 +69,6 @@ export function useInterviewSession(id: string) {
         });
     }, []);
 
-    // Initial setup
     useEffect(() => {
         let cancelled = false;
 
@@ -95,7 +95,8 @@ export function useInterviewSession(id: string) {
                                 window.speechSynthesis.cancel();
                                 playTTS(warningText);
                                 setTimeout(() => {
-                                    window.location.href = `/myinterviews`; 
+                                    router.push(`/myinterviews`); 
+                                    toast.success("Interview ended successfully");
                                 }, 10000);
                             }, warningDelay);
                         }
@@ -124,9 +125,9 @@ export function useInterviewSession(id: string) {
 
                     await playTTS(startRes.data.nextQuestion);
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                 if (cancelled) return;
-                const statusCode = error?.response?.status;
+                const statusCode = (error as { response?: { status?: number } })?.response?.status;
                 if (statusCode === 429 && attempt < 5) {
                     const delay = 1500 * (attempt + 1);
                     setTimeout(() => initWithRetry(attempt + 1), delay);
@@ -144,7 +145,7 @@ export function useInterviewSession(id: string) {
             cleanupRecording();
             window.speechSynthesis.cancel();
         };
-    }, [id, cleanupRecording, playTTS]);
+    }, [id, cleanupRecording, playTTS, router, endInterview]);
 
     const replayQuestion = useCallback(() => {
         if (aiQuestion && status !== "listening" && status !== "processing") {

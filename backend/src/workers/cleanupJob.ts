@@ -2,7 +2,6 @@ import cron from 'node-cron';
 import Interview from '../models/Interview.js';
 
 export const initCleanupJob = () => {
-  // Run every 10 minutes
   cron.schedule('*/10 * * * *', async () => {
     console.log('Running cleanup job for expired interviews...');
     try {

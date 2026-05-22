@@ -10,30 +10,21 @@ import { Interview } from '@/types';
 
 type DisplayStatus = 'scheduled' | 'live' | 'completed' | 'failed' | 'expired';
 
-/**
- * Resolves the true display status for an interview,
- * accounting for cases where the DB may be stale (e.g. a
- * scheduled interview whose window has closed, or a live
- * interview whose duration has elapsed).
- */
 const resolveDisplayStatus = (interview: Interview): DisplayStatus => {
   const now = Date.now();
   const GRACE_MS = 30 * 60 * 1000; // 30-min window
 
   if (interview.status === 'scheduled') {
     const scheduledAt = new Date(interview.scheduledAt).getTime();
-    // Upcoming: scheduled time is in the future (or within the 30-min grace)
     if (now <= scheduledAt + GRACE_MS) return 'scheduled';
     return 'expired';
   }
 
   if (interview.status === 'live') {
-    // If startTime exists and the full duration has elapsed, treat as completed
     if (interview.startTime) {
       const endAt = new Date(interview.startTime).getTime() + interview.plannedDuration * 60 * 1000;
       if (now > endAt) return 'completed';
     }
-    // Still within duration – joinable
     return 'scheduled';
   }
 
@@ -89,7 +80,7 @@ export default function MyInterviewsPage() {
             <AlertCircle className="h-12 w-12 text-gray-500 mb-4" />
             <h3 className="text-xl font-medium mb-2">No Interviews Yet</h3>
             <p className="text-gray-400 mb-6 max-w-md">
-              You haven't completed any practice sessions. Start your first AI interview to receive detailed feedback.
+              You haven&apos;t completed any practice sessions. Start your first AI interview to receive detailed feedback.
             </p>
             <Link href="/setup">
               <Button className="bg-linear-to-r from-purple-400 to-pink-500 text-black border-0 hover:opacity-90 font-medium h-11 px-8 rounded-md">

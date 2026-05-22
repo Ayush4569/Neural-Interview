@@ -34,7 +34,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If on a protected route but no user (waiting for redirect), don't render children
   const isProtectedRoute = protectedRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`));
   if (isProtectedRoute && !user) {
       return null;

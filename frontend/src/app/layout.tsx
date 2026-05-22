@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { NotificationProvider } from "@/components/NotificationProvider";
 import { Toaster } from "sonner";
 import { Navbar } from "@/components/Navbar";
 import Providers from "./providers";
@@ -33,12 +32,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>
-          <NotificationProvider>
             <Navbar />
             <main className="flex-1 flex flex-col">
               {children}
             </main>
-          </NotificationProvider>
         </Providers>
         <Toaster position="top-right" richColors closeButton />
       </body>

@@ -37,7 +37,6 @@ export default function Login() {
     } catch (error: unknown) {
       console.log('login',error);
       
-      // API interceptor handles the error toast
     } finally {
       setLoading(false);
     }
@@ -104,7 +103,7 @@ export default function Login() {
           </Button>
 
           <p className="text-sm text-center text-gray-400">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/register" className="text-gray-300 hover:text-white underline">
               Register
             </Link>

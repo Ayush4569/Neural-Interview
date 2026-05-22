@@ -32,7 +32,7 @@ export default function EvaluationPage() {
         <AlertCircle className="h-14 w-14 text-red-500 mb-4" />
         <h2 className="text-2xl font-bold mb-2">Evaluation Not Available</h2>
         <p className="text-gray-400 mb-8 max-w-md">
-          We couldn't load the feedback for this session. It may still be processing or the interview is not yet completed.
+          We couldn&apos;t load the feedback for this session. It may still be processing or the interview is not yet completed.
         </p>
         <Link href="/myinterviews">
           <Button variant="outline" className="border-gray-700 text-white hover:bg-gray-800">

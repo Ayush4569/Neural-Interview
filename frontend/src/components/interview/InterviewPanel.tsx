@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import { Mic, MicOff, RefreshCw, Loader2, Bot } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, Bot } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useInterviewSession } from '@/hooks/useInterviewSession';
 
@@ -9,7 +9,7 @@ export default function InterviewPanel() {
     const params = useParams();
     const id = params.id as string;
     const { data: user } = useUser();
-    
+
     const {
         status,
         timeLeft,
@@ -107,11 +107,10 @@ export default function InterviewPanel() {
                     <button
                         onClick={toggleRecording}
                         disabled={status === "processing" || status === "connecting" || status === "playing"}
-                        className={`relative flex items-center justify-center w-20 h-20 rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:transform-none ${
-                            isRecording 
-                                ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' 
-                                : 'bg-white hover:bg-neutral-200 text-neutral-950 shadow-white/10'
-                        }`}
+                        className={`relative flex items-center justify-center w-20 h-20 rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:transform-none ${isRecording
+                            ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
+                            : 'bg-white hover:bg-neutral-200 text-neutral-950 shadow-white/10'
+                            }`}
                     >
                         {isRecording ? (
                             <MicOff className="w-8 h-8 text-white" />
@@ -119,7 +118,7 @@ export default function InterviewPanel() {
                             <Mic className={`w-8 h-8 ${(status === "processing" || status === "connecting" || status === "playing") ? 'text-neutral-500' : ''}`} />
                         )}
                     </button>
-                    
+
                     <div className="w-20">
                         {/* Placeholder for symmetry */}
                     </div>

@@ -58,12 +58,13 @@ export default function PreJoinPanel({ interviewId }: PreJoinPanelProps) {
         rafRef.current = requestAnimationFrame(updateMeter);
       };
       updateMeter();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setIsMicAllowed(false);
       console.log("Error during requesting mic: ", error);
-      if (error?.name === "NotAllowedError") {
+      const err = error as Error;
+      if (err?.name === "NotAllowedError") {
         toast.error("Permission denied. Check browser mic permissions.");
-      } else if (error?.name === "NotFoundError") {
+      } else if (err?.name === "NotFoundError") {
         toast.error("No microphone found. Plug in a mic and try again.");
       } else {
         toast.error("Unable to access microphone.");
