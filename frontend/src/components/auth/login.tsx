@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { loginSchema } from '@/schemas';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 type FormValues = z.infer<typeof loginSchema>;
 
@@ -22,6 +23,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const setUser = useAuthStore(state => state.setUser)
+  const queryClient = useQueryClient();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(loginSchema),
@@ -33,6 +35,7 @@ export default function Login() {
       const res = await api.post('/user/auth/login', {...data,device : navigator.platform || navigator.userAgent});
       toast.success("Login successfull");
       setUser(res.data.user);
+      queryClient.setQueryData(['user'], res.data.user);
       router.push('/myinterviews');
     } catch (error: unknown) {
       console.log('login',error);

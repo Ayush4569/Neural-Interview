@@ -3,28 +3,26 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useUser } from '@/hooks/useUser';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Loader2 } from 'lucide-react';
 
 const protectedRoutes = ['/setup', '/myinterviews', '/interview', '/evaluation'];
 const authRoutes = ['/login', '/register', '/signup'];
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading } = useUser();
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isLoading } = useUser();
+  const { isAuthenticated } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
 
+  const isProtectedRoute = protectedRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`));
+
   useEffect(() => {
-    if (isLoading) return;
-
-    const isProtectedRoute = protectedRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`));
-    const isAuthRoute = authRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`));
-
-    if (!user && isProtectedRoute) {
-      router.push('/login');
-    } else if (user && isAuthRoute) {
-      router.push('/');
+    if (!isLoading && isProtectedRoute && !isAuthenticated) {
+      console.log("AuthGuard: redirecting to login");
+      router.replace('/login');
     }
-  }, [user, isLoading, pathname, router]);
+  }, [isAuthenticated, isLoading, isProtectedRoute, router]);
 
   if (isLoading) {
     return (
@@ -34,10 +32,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`));
-  if (isProtectedRoute && !user) {
-      return null;
+  if (isProtectedRoute && !isAuthenticated) {
+    return null;
   }
 
   return <>{children}</>;
 }
+export  {AuthGuard};

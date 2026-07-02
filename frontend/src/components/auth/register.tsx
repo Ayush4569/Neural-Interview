@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { registerSchema } from '@/schemas';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 type FormValues = z.infer<typeof registerSchema>;
 
@@ -23,6 +24,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const setUser = useAuthStore(state => state.setUser)
+  const queryClient = useQueryClient();
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(registerSchema),
   });
@@ -33,6 +35,7 @@ export default function Register() {
       const res = await api.post('/user/auth/register', { ...data,device : navigator.platform || navigator.userAgent });
       toast.success("Account created successfully!");
       setUser(res.data.user);
+      queryClient.setQueryData(['user'], res.data.user);
       router.push('/myinterviews');
     } catch {
       toast.error("Registration failed. Email might already exist.");

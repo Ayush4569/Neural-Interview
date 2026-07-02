@@ -24,7 +24,7 @@ const InterviewSchema = new Schema<IInterview>(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     transcriptId: { type: Schema.Types.ObjectId, ref: "Transcript" },
     jobTitle: { type: String, required: true },
-    techStack: {type: [String],required:true},
+    techStack: { type: [String], required: true },
     experienceLevel: {
       type: String,
       enum: ["0-1", "1-3", "3-5", "5+"],

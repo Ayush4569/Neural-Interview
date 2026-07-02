@@ -97,7 +97,6 @@ export default function SetupPage() {
         router.push(`/interview/${data.interviewId}/lobby`);
       }
     } catch {
-      // handled by global axios interceptor 
       
     }
   };

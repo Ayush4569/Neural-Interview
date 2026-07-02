@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { toast } from 'sonner';
-import { useAuthStore } from '../store/useAuthStore';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1',
@@ -27,10 +26,6 @@ api.interceptors.response.use(
         );
         return api(originalRequest);
       } catch (refreshError) {
-        useAuthStore.getState().clearUser();
-        if (typeof window !== 'undefined' && !['/login', '/register', '/setup', '/'].includes(window.location.pathname)) {
-          window.location.href = '/login';
-        }
         return Promise.reject(refreshError);
       }
     }

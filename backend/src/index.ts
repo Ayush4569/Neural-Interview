@@ -1,9 +1,11 @@
 import express, { type Application, type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import connectDB from './config/db.js';
-import authRoutes from './routes/authRoutes.js';
-import interviewRoutes from './routes/interviewRoutes.js';
+import connectDB from './database/db.js';
+import authRoute from './routes/authRoutes.js';
+import interviewRoute from './routes/interviewRoutes.js';
+import speechRoute from './routes/speechSynthesis.js';
+import evalRoute from './routes/evaluationRoutes.js';
 import { initCleanupJob } from './workers/cleanupJob.js';
 import {errorHandler} from './middleware/errorMiddleware.js';
 
@@ -24,8 +26,10 @@ app.use(cors({
   credentials: true
 }));
 
-app.use('/api/v1/user', authRoutes);
-app.use('/api/v1/interviews', interviewRoutes);
+app.use('/api/v1/user', authRoute);
+app.use('/api/v1/interviews', interviewRoute);
+app.use('/api/v1/voice', speechRoute);
+app.use('/api/v1/evaluations', evalRoute);
 
 
 app.get('/', (req: Request, res: Response) => {

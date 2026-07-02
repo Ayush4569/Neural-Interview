@@ -15,7 +15,7 @@ export const useUser = () => {
           setUser(data.user);
           return data.user;
         }
-        return null;
+        throw new Error('User profile data invalid');
       } catch (error) {
         clearUser();
         throw error;

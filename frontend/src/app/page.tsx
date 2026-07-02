@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Trophy, Zap, Clock, Loader2 } from "lucide-react";
-import { useUser } from '@/hooks/useUser';
 import { useAuthStore } from '@/store/useAuthStore';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -18,8 +17,6 @@ export default function Home() {
   const { isAuthenticated } = useAuthStore();
   const [startingInterview, setStartingInterview] = useState<string | null>(null);
   const { mutateAsync: createInterview } = useCreateInterview();
-
-  useUser();
 
   const handleQuickStart = async (template: Template) => {
     setStartingInterview(template.id);

@@ -1,13 +1,12 @@
 import { type Request, type Response, type NextFunction } from "express";
 import Interview from "../models/Interview.js";
 import Transcript from "../models/Transcript.js";
-import { generateInterviewQuestion } from "../services/aiService.js";
+import { AiService } from "../services/ai.service.js";
 import ErrorResponse from "../utils/errorResponse.js";
-import {
-  InterviewSchema,
-  QuestionResponseSchema,
-} from "../schema/interview.js";
+import { InterviewSchema } from "../schema/interview.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+
+const TTL = 30 * 60 * 60
 
 export const createInterview = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -75,159 +74,6 @@ export const createInterview = asyncHandler(
   },
 );
 
-export const startInterview = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !req.user.id) {
-      throw new ErrorResponse("No user found with this id", 404);
-    }
-    const { id } = req.params;
-
-    const interview = await Interview.findById(id);
-
-    if (!interview) throw new ErrorResponse("Interview not found", 404);
-
-    switch (interview.status) {
-      case "failed":
-        throw new ErrorResponse("Interview was failed", 404);
-
-      case "expired":
-        throw new ErrorResponse("Interview expired", 404);
-
-      case "completed":
-        throw new ErrorResponse("Interview completed", 404);
-    }
-
-    if (interview.status == "scheduled") {
-      const now = new Date();
-      const graceTime = 30 * 60 * 1000;
-      if (now.getTime() - interview.scheduledAt.getTime() > graceTime) {
-        interview.status = "expired";
-        await interview.save();
-        throw new ErrorResponse("Interview has expired", 404);
-      } else {
-        interview.status = "live";
-        interview.startTime = new Date();
-        await interview.save();
-      }
-    } else if (interview.status === "live") {
-      if (!interview.startTime) {
-        interview.startTime = new Date();
-        await interview.save();
-      } else {
-        const endTimeTime = interview.startTime.getTime() + interview.plannedDuration * 60 * 1000;
-        if (Date.now() > endTimeTime) {
-          interview.status = "completed";
-          interview.endTime = new Date(endTimeTime);
-          interview.actualDuration = interview.plannedDuration;
-          await interview.save();
-          throw new ErrorResponse("Interview has already ended", 400);
-        }
-      }
-    }
-
-    let transcript = await Transcript.findOneAndUpdate(
-      { interviewId: interview._id },
-      {
-        $setOnInsert: {
-          interviewId: interview._id,
-          messages: [],
-        },
-      },
-      {
-        new: true,
-        upsert: true,
-      },
-    );
-
-    const lastAssistantMessage = [...transcript.messages]
-      .reverse()
-      .find((msg) => msg.role === "ai");
-
-    if (lastAssistantMessage) {
-      const endTime = interview.startTime
-        ? new Date(interview.startTime.getTime() + interview.plannedDuration * 60 * 1000)
-        : undefined;
-      return res.status(200).json({
-        success: true,
-        message: "Interview resumed",
-        interviewId: interview._id,
-        status: interview.status,
-        nextQuestion: lastAssistantMessage.text,
-        endTime,
-      });
-    }
-
-    const lockedTranscript = await Transcript.findOneAndUpdate(
-      { _id: transcript._id, isProcessing: { $ne: true } },
-      { $set: { isProcessing: true } },
-      { new: true },
-    );
-
-    if (!lockedTranscript) {
-      throw new ErrorResponse(
-        "Interview is currently processing. Please wait.",
-        429,
-      );
-    }
-
-    try {
-      let nextQuestion = "";
-      try {
-        nextQuestion = await generateInterviewQuestion(
-          interview.jobTitle,
-          interview.techStack,
-          interview.experienceLevel,
-          transcript.messages,
-        );
-      } catch (error: any) {
-        interview.status = "failed";
-        const msg =
-          error instanceof ErrorResponse
-            ? error.message
-            : "AI generation failed";
-        interview.errorReason = msg;
-        await interview.save();
-        throw new ErrorResponse(`Interview aborted: ${msg}`, 500);
-      }
-
-      if (!nextQuestion || nextQuestion.length === 0) {
-        interview.status = "failed";
-        interview.errorReason = "Failed to generate initial question";
-        await interview.save();
-        throw new ErrorResponse(
-          "Failed to generate initial question. The interview has been aborted.",
-          500,
-        );
-      }
-
-      await Transcript.findByIdAndUpdate(transcript._id, {
-        $push: {
-          messages: {
-            role: "ai" as const,
-            text: nextQuestion,
-            createdAt: new Date(),
-          },
-        },
-      });
-
-      const endTime = new Date(interview.startTime!.getTime() + interview.plannedDuration * 60 * 1000);
-
-      return res.status(200).json({
-        success: true,
-        message: "Interview in-progress",
-        interviewId: id,
-        status: interview.status,
-        nextQuestion,
-        endTime,
-      });
-    } finally {
-      await Transcript.findByIdAndUpdate(transcript._id, {
-        $set: { isProcessing: false },
-      });
-    }
-  },
-);
-
 export const getInterview = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user || !req.user.id) {
@@ -257,153 +103,6 @@ export const getHistory = asyncHandler(
       success: true,
       interviews,
     });
-  },
-);
-
-export const submitAnswer = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !req.user.id) {
-      throw new ErrorResponse("Unauthorized", 404);
-    }
-
-    const { answer } = req.body;
-    const { id } = req.params;
-
-    const interview = await Interview.findOne({
-      _id: id as string,
-      userId: req.user.id,
-    });
-
-    if (!interview || interview.status !== "live") {
-      throw new ErrorResponse("Invalid interview", 404);
-    }
-
-    const result = QuestionResponseSchema.safeParse(answer);
-    if (!result.success) {
-      throw new ErrorResponse("Answer cannot be empty", 400);
-    }
-
-    const transcript = await Transcript.findOneAndUpdate(
-      { interviewId: interview._id, isProcessing: { $ne: true } },
-      { $set: { isProcessing: true } },
-      { new: true },
-    );
-
-    if (!transcript) {
-      throw new ErrorResponse(
-        "An answer is already being processed. Please wait.",
-        429,
-      );
-    }
-
-    try {
-      const endTimeTime =
-        interview.startTime!.getTime() + interview.plannedDuration * 60 * 1000;
-      const isTimeUp = Date.now() > endTimeTime;
-
-      const userMessage = {
-        role: "user" as const,
-        text: answer,
-        createdAt: new Date(),
-      };
-
-      if (isTimeUp) {
-        interview.status = "completed";
-        interview.endTime = new Date();
-        interview.actualDuration = Math.max(
-          1,
-          Math.round(
-            (interview.endTime.getTime() - interview.startTime!.getTime()) /
-            60000,
-          ),
-        );
-        await interview.save();
-
-        await Transcript.findByIdAndUpdate(transcript._id, {
-          $push: { messages: userMessage },
-        });
-
-        return res.status(200).json({
-          success: true,
-          message: "Interview time completed. Your final answer was saved.",
-          isCompleted: true,
-        });
-      }
-
-      const memoryMessages = [...transcript.messages, userMessage];
-
-      let nextQuestion = "";
-      let retries = 2;
-      let aiErrorMsg =
-        "AI failed to generate a question after multiple attempts.";
-
-      while (retries >= 0) {
-        try {
-          const generated = await generateInterviewQuestion(
-            interview.jobTitle,
-            interview.techStack,
-            interview.experienceLevel,
-            memoryMessages,
-          );
-          if (generated && generated.length > 0) {
-            nextQuestion = generated;
-            break;
-          }
-        } catch (error: any) {
-          console.error(
-            `AI generation failed. Retries left: ${retries}`,
-            error,
-          );
-          if (error instanceof ErrorResponse) {
-            aiErrorMsg = error.message;
-            if (error.statusCode === 429 || retries === 0) {
-              retries = -1; // ensure loop exits
-              break;
-            }
-          }
-          if (retries > 0) {
-            await new Promise((res) => setTimeout(res, 1500));
-          }
-        }
-        retries--;
-      }
-
-      if (!nextQuestion || nextQuestion.length === 0) {
-        interview.status = "failed";
-        interview.errorReason = aiErrorMsg;
-        interview.endTime = new Date();
-        interview.actualDuration = Math.max(
-          1,
-          Math.round(
-            (interview.endTime.getTime() - interview.startTime!.getTime()) /
-            60000,
-          ),
-        );
-        await interview.save();
-
-        throw new ErrorResponse(`Interview aborted: ${aiErrorMsg}`, 500);
-      }
-
-      const aiMessage = {
-        role: "ai" as const,
-        text: nextQuestion,
-        createdAt: new Date(),
-      };
-
-      await Transcript.findByIdAndUpdate(transcript._id, {
-        $push: { messages: { $each: [userMessage, aiMessage] } },
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: "Answer submitted successfully",
-        nextQuestion,
-      });
-    } finally {
-      await Transcript.findByIdAndUpdate(transcript._id, {
-        $set: { isProcessing: false },
-      });
-    }
   },
 );
 
@@ -444,3 +143,349 @@ export const endInterview = asyncHandler(
     });
   },
 );
+
+export const startInterview = asyncHandler(
+  async (req: Request, res: Response) => {
+    if (!req.user?.id) {
+      throw new ErrorResponse("Unauthorized", 401);
+    }
+
+    const { id } = req.params;
+
+    if (!id || Array.isArray(id)) {
+      throw new ErrorResponse("Invalid interview id", 400);
+    }
+
+
+    const interview = await Interview.findOne({
+      _id: id,
+      userId: req.user.id,
+    });
+
+    if (!interview) {
+      throw new ErrorResponse("Interview not found", 404);
+    }
+
+
+    switch (interview.status) {
+      case "completed":
+        throw new ErrorResponse("Interview already completed", 400);
+
+      case "failed":
+        throw new ErrorResponse("Interview failed", 400);
+
+      case "expired":
+        throw new ErrorResponse("Interview expired", 400);
+    }
+
+
+    let transcript = await Transcript.findOne({
+      interviewId: interview._id,
+    });
+
+    if (!transcript) {
+      transcript = await Transcript.create({
+        interviewId: interview._id,
+        messages: [],
+        isProcessing: false,
+      });
+    }
+
+
+    const hasConversationStarted =
+      interview.status === "live" &&
+      transcript.messages.length > 0;
+
+    if (hasConversationStarted) {
+      const lastAIMessage = [...transcript.messages]
+        .reverse()
+        .find((msg) => msg.role === "ai")
+        ;
+
+      return res.status(200).json({
+        success: true,
+        question: lastAIMessage?.text ?? null,
+        resumed: true,
+      });
+    }
+
+
+    if (interview.status === "scheduled") {
+      const now = new Date();
+
+      if (
+        now.getTime() - interview.scheduledAt.getTime() >
+        TTL
+      ) {
+        interview.status = "expired";
+        interview.errorReason =
+          "Interview was not started within the allowed time window.";
+
+        await interview.save();
+
+        throw new ErrorResponse(
+          "Interview expired due to inactivity",
+          400
+        );
+      }
+
+      interview.status = "live";
+      interview.startTime = now;
+
+      await interview.save();
+    }
+
+
+    if (transcript.isProcessing) {
+      throw new ErrorResponse(
+        "Question generation already in progress",
+        409
+      );
+    }
+
+    try {
+      transcript.isProcessing = true;
+      await transcript.save();
+
+      const {
+        techStack,
+        jobTitle,
+        experienceLevel,
+        optionalPrompt,
+      } = interview;
+
+      const geminiService = new AiService();
+
+      const {
+        success,
+        question,
+        error,
+      } = await geminiService.generateQuestions({
+        techStack,
+        jobTitle,
+        experienceLevel,
+        optionalPrompt,
+        transcript: transcript.messages,
+      });
+
+      if (!success || !question) {
+        interview.status = "failed";
+        interview.errorReason =
+          error || "Failed to generate interview question";
+
+        await interview.save();
+
+        throw new ErrorResponse(
+          interview.errorReason,
+          500
+        );
+      }
+
+      transcript.messages.push({
+        role: "ai",
+        text: question,
+        createdAt: new Date(),
+      });
+
+      await transcript.save();
+
+      return res.status(200).json({
+        success: true,
+        question,
+        resumed: false,
+      });
+    } finally {
+      transcript.isProcessing = false;
+      await transcript.save();
+    }
+  }
+);
+
+export const submitAnswer = asyncHandler(
+  async (req: Request, res: Response) => {
+    if (!req.user?.id) {
+      throw new ErrorResponse("Unauthorized", 401);
+    }
+
+    const { id } = req.params;
+    const { answer } = req.body;
+
+    if (!id || Array.isArray(id)) {
+      throw new ErrorResponse("Invalid interview id", 400);
+    }
+
+    if (!answer || typeof answer !== "string") {
+      throw new ErrorResponse("Invalid answer", 400);
+    }
+
+
+    const interview = await Interview.findOne({
+      _id: id,
+      userId: req.user.id,
+    });
+
+    if (!interview) {
+      throw new ErrorResponse("Interview not found", 404);
+    }
+
+    if (interview.status !== "live") {
+      throw new ErrorResponse("Interview is not live", 400);
+    }
+
+
+    const transcript = await Transcript.findOne({
+      interviewId: id,
+    });
+
+    if (!transcript) {
+      throw new ErrorResponse(
+        "Transcript not found for interview",
+        404
+      );
+    }
+
+
+    transcript.messages.push({
+      role: "user",
+      text: answer,
+      createdAt: new Date(),
+    });
+
+    await transcript.save();
+
+
+    const elapsedTime =
+      Date.now() - interview.startTime!.getTime();
+
+    const durationExceeded =
+      elapsedTime >=
+      interview.plannedDuration * 60 * 1000;
+
+    if (durationExceeded) {
+      const closingMessage =
+        "Thank you for your time. This concludes the interview.";
+
+      transcript.messages.push({
+        role: "ai",
+        text: closingMessage,
+        createdAt: new Date(),
+      });
+
+      await transcript.save();
+
+      interview.status = "completed";
+      interview.endTime = new Date();
+
+      await interview.save();
+
+      return res.status(200).json({
+        success: true,
+        shouldEnd: true,
+        question: closingMessage,
+      });
+    }
+
+
+    if (transcript.isProcessing) {
+      throw new ErrorResponse(
+        "Question generation already in progress",
+        409
+      );
+    }
+
+    try {
+      transcript.isProcessing = true;
+      await transcript.save();
+
+      const {
+        techStack,
+        jobTitle,
+        experienceLevel,
+        optionalPrompt,
+      } = interview;
+
+      const geminiService = new AiService();
+
+      const {
+        success,
+        question,
+        error,
+      } = await geminiService.generateQuestions({
+        techStack,
+        jobTitle,
+        experienceLevel,
+        optionalPrompt,
+        transcript: transcript.messages,
+      });
+
+      if (!success || !question) {
+        throw new ErrorResponse(
+          error || "Failed to generate question",
+          500
+        );
+      }
+
+      transcript.messages.push({
+        role: "ai",
+        text: question,
+        createdAt: new Date(),
+      });
+
+      await transcript.save();
+
+      return res.status(200).json({
+        success: true,
+        shouldEnd: false,
+        question,
+      });
+    } finally {
+      transcript.isProcessing = false;
+      await transcript.save();
+    }
+  }
+);
+
+export const getInterviewState = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user?.id) {
+    throw new ErrorResponse("Unauthorized", 401);
+  }
+
+  const { id } = req.params;
+
+  if (!id || Array.isArray(id)) {
+    throw new ErrorResponse("Invalid interview id", 400);
+  }
+
+
+  const interview = await Interview.findOne({
+    _id: id,
+    userId: req.user.id,
+  });
+
+  if (!interview) {
+    throw new ErrorResponse("Interview not found", 404);
+  }
+  const transcript = await Transcript.findOne({ interviewId: interview._id })
+  if (!transcript) {
+    throw new ErrorResponse("Transcript not found", 404);
+  }
+  const lastAIMessage = [...transcript.messages].reverse().find((msg) => msg.role === "ai");
+
+  return res.status(200).json({
+    success: true,
+    state: {
+      id: interview._id,
+      status: interview.status,
+  
+      plannedDuration: interview.plannedDuration,
+      startTime: interview.startTime,
+      endTime: interview.endTime,
+  
+      currentQuestion: lastAIMessage?.text ?? "",
+  
+      isProcessing: transcript.isProcessing,
+  
+    }
+  })
+
+})
